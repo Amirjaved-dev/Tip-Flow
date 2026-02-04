@@ -2,50 +2,56 @@
 
 import { useState } from "react";
 import { NextPage } from "next";
+import { formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { CreatorList } from "~~/components/tipflow/CreatorList";
 import { SessionCreate } from "~~/components/tipflow/SessionCreate";
 import { SessionStatus } from "~~/components/tipflow/SessionStatus";
 import { TipControl } from "~~/components/tipflow/TipControl";
 import { TippingStream } from "~~/components/tipflow/TippingStream";
+import { useYellowSession } from "~~/hooks/tipflow/useYellowSession";
 
 const Home: NextPage = () => {
   const { isConnected } = useAccount();
-  const [sessionActive, setSessionActive] = useState(false);
-  const [balance, setBalance] = useState("0");
-  const [totalTipped, setTotalTipped] = useState("0");
-  const [txCount, setTxCount] = useState(0);
+  const {
+    sessionId,
+    tips,
+    createSession,
+    endSession: hookEndSession, // Rename to avoid conflict if needed, or just use it
+    addTip,
+    totalDeposited,
+  } = useYellowSession();
+
+  // Derived state
+  const tipsArray = Object.values(tips);
+  const totalTippedVal = tipsArray.length > 0 ? tipsArray.reduce((test, val) => test + val, 0n) : 0n;
+  // Format for display
+  const balance = totalDeposited > 0n ? formatEther(totalDeposited - totalTippedVal) : "0";
+  const totalTippedDisplay = formatEther(totalTippedVal);
+
   const [selectedCreator, setSelectedCreator] = useState<any>(null);
 
-  const startSession = (amount: string) => {
-    setBalance(amount);
-    setSessionActive(true);
+  const startSession = async (amount: string) => {
+    await createSession(amount);
   };
 
-  const endSession = () => {
-    setSessionActive(false);
-    setBalance("0");
-    setTotalTipped("0");
-    setTxCount(0);
+  const endSession = async () => {
+    await hookEndSession();
     setSelectedCreator(null);
   };
 
   const handleSelectCreator = (creator: any) => {
     setSelectedCreator(creator);
-    // Scroll to top or specific section on mobile might be needed
   };
 
   const handleSendTip = (amount: string) => {
-    const cost = parseFloat(amount);
-    const current = parseFloat(balance);
-    if (cost > current) {
-      alert("Insufficient session balance!");
+    if (!selectedCreator?.address) {
+      // Assuming creator object has address
+      // For now, if creator logic not fully blocked out, use valid placeholder or fail
+      alert("Creator address missing");
       return;
     }
-    setBalance((current - cost).toFixed(2));
-    setTotalTipped((parseFloat(totalTipped) + cost).toFixed(2));
-    setTxCount(prev => prev + 1);
-    // In a real app, this would also add to the TippingStream
+    addTip(selectedCreator.address, amount);
   };
 
   if (!isConnected) {
@@ -76,7 +82,7 @@ const Home: NextPage = () => {
     );
   }
 
-  if (!sessionActive) {
+  if (!sessionId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 relative overflow-hidden">
         {/* Background blobs */}
@@ -95,7 +101,12 @@ const Home: NextPage = () => {
         <p className="text-base-content/60">Connected to Yellow Network State Channel</p>
       </div>
 
-      <SessionStatus balance={balance} totalTipped={totalTipped} transactionCount={txCount} onEndSession={endSession} />
+      <SessionStatus
+        balance={balance}
+        totalTipped={totalTippedDisplay}
+        transactionCount={Object.keys(tips).length}
+        onEndSession={endSession}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Creator Discovery & Selection */}
