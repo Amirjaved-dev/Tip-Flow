@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { encodePacked, hashMessage, keccak256, parseEther, parseUnits, toBytes, toHex, decodeEventLog, erc20Abi } from "viem";
+import { encodePacked, keccak256, parseUnits, toBytes, toHex, erc20Abi } from "viem";
 import { useAccount, useWalletClient, usePublicClient, useWriteContract, useReadContract } from "wagmi";
 import { useDeployedContractInfo, useScaffoldWriteContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
@@ -166,5 +166,6 @@ export const useYellowSession = () => {
     createSession,
     endSession,
     totalDeposited,
+    tokenDecimals,
   };
 };

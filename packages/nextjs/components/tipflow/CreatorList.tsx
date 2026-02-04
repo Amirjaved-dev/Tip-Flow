@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { isAddress } from "viem";
 import { UserCircleIcon } from "@heroicons/react/24/solid";
+import { AddressInput } from "~~/components/scaffold-eth/AddressInput";
 
 interface Creator {
   id: string;
@@ -30,15 +32,37 @@ export const CreatorList = ({ onSelectCreator }: { onSelectCreator: (creator: Cr
 
   return (
     <div className="w-full">
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search creators or ENS..."
-          className="input input-bordered w-full bg-base-100/50 backdrop-blur-sm focus:bg-base-100 transition-colors"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      <div className="mb-6 p-4 glass-panel rounded-xl border border-primary/20 bg-primary/5">
+        <h3 className="font-bold mb-2 flex items-center gap-2">
+          <UserCircleIcon className="w-5 h-5 text-primary" />
+          Direct Tip
+        </h3>
+        <p className="text-xs text-base-content/60 mb-3">Enter an 0x address or ENS name to tip anyone directly.</p>
+        <AddressInput value={search} onChange={setSearch} placeholder="e.g. vitalik.eth or 0x..." />
+        {/* Only show "Select" button if it looks like a valid direct tip */}
+        {(isAddress(search) || search.includes(".")) && (
+          <button
+            className="btn btn-primary btn-sm w-full mt-3"
+            onClick={() => {
+              // Logic handled by parent or we mock a creator object here?
+              // We need to resolve it first if it's ENS to be safe, but AddressInput does it visually.
+              // Let's pass a special "direct" creator object
+              onSelectCreator({
+                id: "direct-" + search,
+                name: search,
+                ens: search.includes(".") ? search : undefined,
+                wallet: search, // This might need resolution in the parent
+                description: "Direct Recipient",
+                avatar: "",
+              });
+            }}
+          >
+            Start Tipping
+          </button>
+        )}
       </div>
+
+      <div className="divider text-xs text-base-content/30 my-2">OR SELECT CREATOR</div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredCreators.map(creator => (

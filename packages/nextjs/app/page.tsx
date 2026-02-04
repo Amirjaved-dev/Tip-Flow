@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { NextPage } from "next";
-import { formatEther } from "viem";
+import { createPublicClient, formatUnits, http } from "viem";
+import { mainnet } from "viem/chains";
+import { normalize } from "viem/ens";
 import { useAccount } from "wagmi";
 import { CreatorList } from "~~/components/tipflow/CreatorList";
 import { SessionCreate } from "~~/components/tipflow/SessionCreate";
@@ -10,6 +12,21 @@ import { SessionStatus } from "~~/components/tipflow/SessionStatus";
 import { TipControl } from "~~/components/tipflow/TipControl";
 import { TippingStream } from "~~/components/tipflow/TippingStream";
 import { useYellowSession } from "~~/hooks/tipflow/useYellowSession";
+
+const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+});
+
+interface Creator {
+  id: string;
+  name: string;
+  address?: string;
+  wallet?: string;
+  ens?: string;
+  description?: string;
+  avatar?: string;
+}
 
 const Home: NextPage = () => {
   const { isConnected } = useAccount();
@@ -20,16 +37,17 @@ const Home: NextPage = () => {
     endSession: hookEndSession, // Rename to avoid conflict if needed, or just use it
     addTip,
     totalDeposited,
+    tokenDecimals,
   } = useYellowSession();
 
   // Derived state
   const tipsArray = Object.values(tips);
   const totalTippedVal = tipsArray.length > 0 ? tipsArray.reduce((test, val) => test + val, 0n) : 0n;
   // Format for display
-  const balance = totalDeposited > 0n ? formatEther(totalDeposited - totalTippedVal) : "0";
-  const totalTippedDisplay = formatEther(totalTippedVal);
+  const balance = totalDeposited > 0n ? formatUnits(totalDeposited - totalTippedVal, tokenDecimals || 18) : "0";
+  const totalTippedDisplay = formatUnits(totalTippedVal, tokenDecimals || 18);
 
-  const [selectedCreator, setSelectedCreator] = useState<any>(null);
+  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
 
   const startSession = async (amount: string) => {
     await createSession(amount);
@@ -40,18 +58,38 @@ const Home: NextPage = () => {
     setSelectedCreator(null);
   };
 
-  const handleSelectCreator = (creator: any) => {
+  const handleSelectCreator = (creator: Creator) => {
     setSelectedCreator(creator);
   };
 
-  const handleSendTip = (amount: string) => {
-    if (!selectedCreator?.address) {
-      // Assuming creator object has address
-      // For now, if creator logic not fully blocked out, use valid placeholder or fail
+  const handleSendTip = async (amount: string) => {
+    let recipientAddress = selectedCreator?.address || selectedCreator?.wallet;
+
+    if (!recipientAddress) {
       alert("Creator address missing");
       return;
     }
-    addTip(selectedCreator.address, amount);
+
+    // Resolve ENS if needed
+    if (recipientAddress.includes(".")) {
+      try {
+        const resolved = await publicClient.getEnsAddress({
+          name: normalize(recipientAddress),
+        });
+        if (resolved) {
+          recipientAddress = resolved;
+        } else {
+          alert("Could not resolve ENS name");
+          return;
+        }
+      } catch (e) {
+        console.error("ENS Resolution error", e);
+        alert("Error resolving ENS name");
+        return;
+      }
+    }
+
+    addTip(recipientAddress, amount);
   };
 
   if (!isConnected) {
