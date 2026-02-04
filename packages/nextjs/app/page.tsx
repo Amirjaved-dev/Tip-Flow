@@ -1,80 +1,133 @@
 "use client";
 
-import Link from "next/link";
-import { Address } from "@scaffold-ui/components";
-import type { NextPage } from "next";
-import { hardhat } from "viem/chains";
+import { useState } from "react";
+import { NextPage } from "next";
 import { useAccount } from "wagmi";
-import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { useTargetNetwork } from "~~/hooks/scaffold-eth";
+import { CreatorList } from "~~/components/tipflow/CreatorList";
+import { SessionCreate } from "~~/components/tipflow/SessionCreate";
+import { SessionStatus } from "~~/components/tipflow/SessionStatus";
+import { TipControl } from "~~/components/tipflow/TipControl";
+import { TippingStream } from "~~/components/tipflow/TippingStream";
 
 const Home: NextPage = () => {
-  const { address: connectedAddress } = useAccount();
-  const { targetNetwork } = useTargetNetwork();
+  const { isConnected } = useAccount();
+  const [sessionActive, setSessionActive] = useState(false);
+  const [balance, setBalance] = useState("0");
+  const [totalTipped, setTotalTipped] = useState("0");
+  const [txCount, setTxCount] = useState(0);
+  const [selectedCreator, setSelectedCreator] = useState<any>(null);
+
+  const startSession = (amount: string) => {
+    setBalance(amount);
+    setSessionActive(true);
+  };
+
+  const endSession = () => {
+    setSessionActive(false);
+    setBalance("0");
+    setTotalTipped("0");
+    setTxCount(0);
+    setSelectedCreator(null);
+  };
+
+  const handleSelectCreator = (creator: any) => {
+    setSelectedCreator(creator);
+    // Scroll to top or specific section on mobile might be needed
+  };
+
+  const handleSendTip = (amount: string) => {
+    const cost = parseFloat(amount);
+    const current = parseFloat(balance);
+    if (cost > current) {
+      alert("Insufficient session balance!");
+      return;
+    }
+    setBalance((current - cost).toFixed(2));
+    setTotalTipped((parseFloat(totalTipped) + cost).toFixed(2));
+    setTxCount(prev => prev + 1);
+    // In a real app, this would also add to the TippingStream
+  };
+
+  if (!isConnected) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 bg-gradient-to-br from-base-100 to-base-200">
+        <div className="text-center max-w-2xl animate-fade-in-up">
+          <h1 className="text-6xl font-black mb-6 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent filter drop-shadow-lg">
+            TipFlow
+          </h1>
+          <p className="text-2xl mb-8 text-base-content/80 font-light">
+            Streaming value to creators <br />
+            <span className="font-bold text-primary">Gasless. Instant. Seamless.</span>
+          </p>
+          <div className="mockup-code bg-base-300 text-base-content shadow-2xl skew-y-2 hover:skew-y-0 transition-transform duration-500 mb-10 w-full max-w-lg mx-auto text-left">
+            <pre data-prefix="$">
+              <code>connect_wallet()</code>
+            </pre>
+            <pre data-prefix=">">
+              <code>Starting session...</code>
+            </pre>
+            <pre data-prefix=">" className="text-success">
+              <code>Gas fees eliminated.</code>
+            </pre>
+          </div>
+          <p className="text-base-content/60">Connect your wallet to start.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sessionActive) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 relative overflow-hidden">
+        {/* Background blobs */}
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-[100px] -z-10 animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/20 rounded-full blur-[100px] -z-10 animate-pulse delay-700"></div>
+
+        <SessionCreate onStartSession={startSession} />
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div className="flex items-center flex-col grow pt-10">
-        <div className="px-5">
-          <h1 className="text-center">
-            <span className="block text-2xl mb-2">Welcome to</span>
-            <span className="block text-4xl font-bold">Scaffold-ETH 2</span>
-          </h1>
-          <div className="flex justify-center items-center space-x-2 flex-col">
-            <p className="my-2 font-medium">Connected Address:</p>
-            <Address
-              address={connectedAddress}
-              chain={targetNetwork}
-              blockExplorerAddressLink={
-                targetNetwork.id === hardhat.id ? `/blockexplorer/address/${connectedAddress}` : undefined
-              }
-            />
-          </div>
+    <div className="flex flex-col p-4 md:p-10 max-w-7xl mx-auto min-h-screen">
+      <div className="mb-6 animate-fade-in-down">
+        <h1 className="text-3xl font-bold">Active Session</h1>
+        <p className="text-base-content/60">Connected to Yellow Network State Channel</p>
+      </div>
 
-          <p className="text-center text-lg">
-            Get started by editing{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/nextjs/app/page.tsx
-            </code>
-          </p>
-          <p className="text-center text-lg">
-            Edit your smart contract{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              YourContract.sol
-            </code>{" "}
-            in{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/hardhat/contracts
-            </code>
-          </p>
+      <SessionStatus balance={balance} totalTipped={totalTipped} transactionCount={txCount} onEndSession={endSession} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Creator Discovery & Selection */}
+        <div className="lg:col-span-4 space-y-6">
+          <CreatorList onSelectCreator={handleSelectCreator} />
         </div>
 
-        <div className="grow bg-base-300 w-full mt-16 px-8 py-12">
-          <div className="flex justify-center items-center gap-12 flex-col md:flex-row">
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <BugAntIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Tinker with your smart contract using the{" "}
-                <Link href="/debug" passHref className="link">
-                  Debug Contracts
-                </Link>{" "}
-                tab.
-              </p>
+        {/* Middle Column: Active Tipping Context */}
+        <div className="lg:col-span-4 space-y-6">
+          {selectedCreator ? (
+            <TipControl
+              recipientName={selectedCreator.name}
+              onSendTip={handleSendTip}
+              disabled={parseFloat(balance) <= 0}
+            />
+          ) : (
+            <div className="glass-panel p-10 rounded-xl flex items-center justify-center text-center h-64 border-2 border-dashed border-base-content/20 bg-base-100/30">
+              <div>
+                <p className="text-lg font-bold opacity-50">Select a creator to start tipping</p>
+              </div>
             </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <MagnifyingGlassIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Explore your local transactions with the{" "}
-                <Link href="/blockexplorer" passHref className="link">
-                  Block Explorer
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
+          )}
+        </div>
+
+        {/* Right Column: Live Feed */}
+        <div className="lg:col-span-4">
+          <div className="glass-panel h-[600px] rounded-xl overflow-hidden sticky top-4">
+            <TippingStream />
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
