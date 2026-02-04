@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { encodePacked, hashMessage, keccak256, parseEther, toBytes, toHex, decodeEventLog, erc20Abi } from "viem";
-import { useAccount, useWalletClient, usePublicClient, useWriteContract } from "wagmi";
+import { encodePacked, hashMessage, keccak256, parseEther, parseUnits, toBytes, toHex, decodeEventLog, erc20Abi } from "viem";
+import { useAccount, useWalletClient, usePublicClient, useWriteContract, useReadContract } from "wagmi";
 import { useDeployedContractInfo, useScaffoldWriteContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -30,20 +30,39 @@ export const useYellowSession = () => {
 
   const { writeContractAsync: writeContract } = useWriteContract();
 
+  /* 
+  const { data: decimals } = useScaffoldReadContract({
+    contractName: "TipFlowSession",
+    functionName: "decimals", 
+  }); 
+  */
+
+  const { data: tokenDecimals } = useReadContract({
+    address: usdcTokenAddress,
+    abi: erc20Abi,
+    functionName: "decimals",
+  });
+
   const publicClient = usePublicClient();
 
   const createSession = async (amount: string) => {
-    if (!amount || !tipFlowSessionData || !publicClient || !usdcTokenAddress) return;
+    if (!amount || !tipFlowSessionData || !publicClient || !usdcTokenAddress || tokenDecimals === undefined) return;
     try {
-      const amountWei = parseEther(amount);
+      const amountWei = parseUnits(amount, tokenDecimals);
 
       // Approve first
-      await writeContract({
+      const approvalTxHash = await writeContract({
         address: usdcTokenAddress,
         abi: erc20Abi,
         functionName: "approve",
         args: [tipFlowSessionData.address, amountWei],
       });
+
+      if (approvalTxHash) {
+        notification.info("Approving USDC...");
+        await publicClient.waitForTransactionReceipt({ hash: approvalTxHash });
+        notification.success("USDC Approved");
+      }
 
       // Call createSession
       const txHash = await createSessionWrite({
@@ -77,7 +96,8 @@ export const useYellowSession = () => {
   };
 
   const addTip = (recipient: string, amount: string) => {
-    const amountWei = parseEther(amount);
+    if (tokenDecimals === undefined) return;
+    const amountWei = parseUnits(amount, tokenDecimals);
     const current = tips[recipient] || 0n;
     // Check limits
     const totalTipped = Object.values(tips).reduce((a, b) => a + b, 0n) + amountWei;
