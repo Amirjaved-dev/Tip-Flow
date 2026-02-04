@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { encodePacked, hashMessage, keccak256, parseEther, toBytes } from "viem";
-import { useAccount, useWalletClient } from "wagmi";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { encodePacked, hashMessage, keccak256, parseEther, toBytes, toHex, decodeEventLog, erc20Abi } from "viem";
+import { useAccount, useWalletClient, usePublicClient, useWriteContract } from "wagmi";
+import { useDeployedContractInfo, useScaffoldWriteContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
 
 export type Campaign = {
@@ -19,45 +19,57 @@ export const useYellowSession = () => {
   const [tips, setTips] = useState<Record<string, bigint>>({});
   const [totalDeposited, setTotalDeposited] = useState<bigint>(0n);
 
-  const { writeContractAsync: createSessionWrite } = useScaffoldWriteContract("TipFlowSession");
-  const { writeContractAsync: settleSessionWrite } = useScaffoldWriteContract("TipFlowSession");
-  const { writeContractAsync: approveUSDC } = useScaffoldWriteContract("MockUSDC"); // Assuming MockUSDC for local
+  const { data: tipFlowSessionData } = useDeployedContractInfo("TipFlowSession");
+  const { writeContractAsync: createSessionWrite } = useScaffoldWriteContract({ contractName: "TipFlowSession" });
+  const { writeContractAsync: settleSessionWrite } = useScaffoldWriteContract({ contractName: "TipFlowSession" });
+
+  const { data: usdcTokenAddress } = useScaffoldReadContract({
+    contractName: "TipFlowSession",
+    functionName: "usdcToken",
+  });
+
+  const { writeContractAsync: writeContract } = useWriteContract();
+
+  const publicClient = usePublicClient();
 
   const createSession = async (amount: string) => {
-    if (!amount) return;
+    if (!amount || !tipFlowSessionData || !publicClient || !usdcTokenAddress) return;
     try {
       const amountWei = parseEther(amount);
 
-      // Approve first (simplified, ideally strictly checking allowance)
-      await approveUSDC({
+      // Approve first
+      await writeContract({
+        address: usdcTokenAddress,
+        abi: erc20Abi,
         functionName: "approve",
-        args: ["0xYourContractAddressPlaceholder", amountWei], // TODO: Need mechanism to get contract address dynamically here if helpful, or relying on hook internals
-        // Actually useScaffoldWriteContract knows the address if name matches.
-        // But wait, approve is on Token, spender is TipFlowSession.
+        args: [tipFlowSessionData.address, amountWei],
       });
-      // Wait? useScaffoldWriteContract handles waiting usually? No, it returns tx hash/promise.
-      // We probably need to wait for approval.
-      // For MVP, letting user rely on UI to trigger deposit after approval or using a better flow.
-
-      // Actually, let's just try deposit. If it fails, user needs to approve.
-      // Ideally we do: Approve -> Wait -> Deposit.
-      // The `writeContractAsync` just sends it.
 
       // Call createSession
-      const tx = await createSessionWrite({
+      const txHash = await createSessionWrite({
         functionName: "createSession",
         args: [amountWei],
       });
 
-      // We need the sessionId from the event.
-      // This complexity might be better handled in a component or by watching events.
-      // For now, let's simulate sessionId generation same as contract to track it locally?
-      // Keccak(sender, block.timestamp, amount) - block.timestamp is hard to guess exactly.
-      // Better to fetch active session from contract or storing the tx hash.
+      if (txHash) {
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-      setTotalDeposited(amountWei);
-      notification.success("Session Created! (Tracking ID pending)");
-      // In reality, we'd query the graph or logs.
+        // Find SessionCreated event
+        // Event signature: SessionCreated(bytes32 indexed sessionId, address indexed creator, uint256 amount)
+        const eventTopic = keccak256(toHex("SessionCreated(bytes32,address,uint256)"));
+
+        for (const log of receipt.logs) {
+          if (log.topics[0] === eventTopic) {
+            const parsedSessionId = log.topics[1]; // indexed sessionId is the 1st topic (after event topic)
+            if (parsedSessionId) {
+              setSessionId(parsedSessionId);
+              setTotalDeposited(amountWei);
+              notification.success("Session Created & Active!");
+              return;
+            }
+          }
+        }
+      }
     } catch (e) {
       console.error(e);
       notification.error("Failed to create session");
