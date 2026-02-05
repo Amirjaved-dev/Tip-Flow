@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { encodePacked, keccak256, parseUnits, toBytes, toHex, erc20Abi } from "viem";
-import { useAccount, useWalletClient, usePublicClient, useWriteContract, useReadContract } from "wagmi";
-import { useDeployedContractInfo, useScaffoldWriteContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useLocalStorage } from "usehooks-ts";
+import { encodePacked, erc20Abi, keccak256, parseUnits, toBytes, toHex } from "viem";
+import { usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
+import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
 
 export type Campaign = {
@@ -13,11 +13,19 @@ export type Campaign = {
 };
 
 export const useYellowSession = () => {
-  const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [tips, setTips] = useState<Record<string, bigint>>({});
-  const [totalDeposited, setTotalDeposited] = useState<bigint>(0n);
+
+  // Persist session state
+  // key: "tipflow-session-{address}" to support multiple wallets?
+  // For now "tipflow-session" is fine, or scoped to address if possible.
+  // scoped to address is better to avoid data leak if user switches wallet.
+  // But hooks rules... we can use a key that ignores address first or just "current-session".
+  // Let's use simple keys for MVP.
+
+  const [sessionId, setSessionId] = useLocalStorage<string | null>("tipflow-sessionId", null);
+  // Store amounts as strings to avoid BigInt serialization issues in localStorage
+  const [tips, setTips] = useLocalStorage<Record<string, string>>("tipflow-tips", {});
+  const [totalDeposited, setTotalDeposited] = useLocalStorage<string>("tipflow-totalDeposited", "0");
 
   const { data: tipFlowSessionData } = useDeployedContractInfo("TipFlowSession");
   const { writeContractAsync: createSessionWrite } = useScaffoldWriteContract({ contractName: "TipFlowSession" });
@@ -29,13 +37,6 @@ export const useYellowSession = () => {
   });
 
   const { writeContractAsync: writeContract } = useWriteContract();
-
-  /* 
-  const { data: decimals } = useScaffoldReadContract({
-    contractName: "TipFlowSession",
-    functionName: "decimals", 
-  }); 
-  */
 
   const { data: tokenDecimals } = useReadContract({
     address: usdcTokenAddress,
@@ -82,7 +83,8 @@ export const useYellowSession = () => {
             const parsedSessionId = log.topics[1]; // indexed sessionId is the 1st topic (after event topic)
             if (parsedSessionId) {
               setSessionId(parsedSessionId);
-              setTotalDeposited(amountWei);
+              setTotalDeposited(amountWei.toString());
+              setTips({}); // Clear any old tips
               notification.success("Session Created & Active!");
               return;
             }
@@ -98,35 +100,40 @@ export const useYellowSession = () => {
   const addTip = (recipient: string, amount: string) => {
     if (tokenDecimals === undefined) return;
     const amountWei = parseUnits(amount, tokenDecimals);
-    const current = tips[recipient] || 0n;
+
+    // Parse current tips from string to bigint
+    const currentTipsBigInt: Record<string, bigint> = {};
+    Object.entries(tips).forEach(([k, v]) => {
+      currentTipsBigInt[k] = BigInt(v);
+    });
+
+    const currentRecipientAmount = currentTipsBigInt[recipient] || 0n;
+
     // Check limits
-    const totalTipped = Object.values(tips).reduce((a, b) => a + b, 0n) + amountWei;
-    if (totalTipped > totalDeposited) {
+    const totalTipped = Object.values(currentTipsBigInt).reduce((a, b) => a + b, 0n) + amountWei;
+
+    if (totalTipped > BigInt(totalDeposited)) {
       notification.error("Insufficient session balance!");
       return;
     }
 
-    setTips({ ...tips, [recipient]: current + amountWei });
+    // Save back as string
+    const newAmount = currentRecipientAmount + amountWei;
+    setTips({ ...tips, [recipient]: newAmount.toString() });
     notification.success(`Tipped ${amount} to ${recipient}`);
   };
 
   const endSession = async () => {
     if (!sessionId) {
-      // notification.error("No active session ID tracked");
-      // For MVP, we need the user to input or we fetch it.
-      // Let's assume we retrieve it or pass it in.
       return;
     }
 
     try {
       const recipients = Object.keys(tips);
-      const amounts = recipients.map(r => tips[r]);
+      // Convert stored strings back to bigints for signing/contract call
+      const amounts = recipients.map(r => BigInt(tips[r]));
 
       // Construct hash
-      // bytes32 messageHash = keccak256(abi.encodePacked(_sessionId, _recipients, _amounts));
-      // We need to replicate packing exactly.
-      // viem's encodePacked: ['bytes32', 'address[]', 'uint256[]']
-
       const packed = encodePacked(
         ["bytes32", "address[]", "uint256[]"],
         [sessionId as `0x${string}`, recipients as `0x${string}`[], amounts],
@@ -135,11 +142,7 @@ export const useYellowSession = () => {
 
       // Sign
       const signature = await walletClient?.signMessage({
-        message: { raw: toBytes(messageHash) }, // Sign the hash (or raw bytes)? Contract uses toEthSignedMessageHash.
-        // signMessage in viem automatically adds prefix for string/bytes.
-        // If we pass raw bytes, it adds prefix.
-        // Contract: messageHash.toEthSignedMessageHash().recover(signature)
-        // So we should sign the raw bytes of the keccak hash.
+        message: { raw: toBytes(messageHash) },
       });
 
       if (!signature) return;
@@ -151,6 +154,7 @@ export const useYellowSession = () => {
 
       setTips({});
       setSessionId(null);
+      setTotalDeposited("0");
       notification.success("Session Settled!");
     } catch (e) {
       console.error(e);
@@ -158,14 +162,21 @@ export const useYellowSession = () => {
     }
   };
 
+  // Convert internal string state to BigInts for consumers if they expect BigInt
+  // But wait, page.tsx expects bigint in 'tips'.
+  const tipsBigInt: Record<string, bigint> = {};
+  Object.entries(tips).forEach(([k, v]) => {
+    tipsBigInt[k] = BigInt(v);
+  });
+
   return {
     sessionId,
-    setSessionId, // Allow setting manually for MVP if needed
-    tips,
+    setSessionId,
+    tips: tipsBigInt, // Return BigInt version to maintain API compatibility
     addTip,
     createSession,
     endSession,
-    totalDeposited,
+    totalDeposited: BigInt(totalDeposited), // Return BigInt version
     tokenDecimals,
   };
 };

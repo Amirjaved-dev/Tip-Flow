@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAddress, isAddress } from "viem";
 import { useEnsAvatar, useEnsName } from "wagmi";
-import { ArrowTopRightOnSquareIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
+import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { useCopyToClipboard, useTargetNetwork } from "~~/hooks/scaffold-eth";
@@ -38,11 +38,11 @@ export const Address = ({ address, disableAddressLink, format, size = "base" }: 
 
   // We need to apply this pattern to avoid Hydration issues.
   useEffect(() => {
-    setEns(fetchedEns);
+    setEns(fetchedEns || null);
   }, [fetchedEns]);
 
   useEffect(() => {
-    setEnsAvatar(fetchedEnsAvatar);
+    setEnsAvatar(fetchedEnsAvatar || null);
   }, [fetchedEnsAvatar]);
 
   const { copyToClipboard, isCopiedToClipboard } = useCopyToClipboard();

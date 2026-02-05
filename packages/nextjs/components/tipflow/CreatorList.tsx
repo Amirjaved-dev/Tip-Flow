@@ -20,7 +20,13 @@ const MOCK_CREATORS: Creator[] = [
   { id: "3", name: "Nick Johnson", ens: "nick.eth", description: "Lead Developer of ENS", wallet: "nick.eth" },
   { id: "4", name: "Stani Kulechov", ens: "stani.eth", description: "Founder of Aave & Lens", wallet: "stani.eth" },
   { id: "5", name: "Linda Xie", ens: "linda.eth", description: "Co-founder Scalar Capital", wallet: "linda.eth" },
-  { id: "6", name: "Anthony Sassano", ens: "sassal.eth", description: "The Daily Gwei / Educator", wallet: "sassal.eth" },
+  {
+    id: "6",
+    name: "Anthony Sassano",
+    ens: "sassal.eth",
+    description: "The Daily Gwei / Educator",
+    wallet: "sassal.eth",
+  },
   { id: "7", name: "Richard Moore", ens: "ricmoo.eth", description: "Author of Ethers.js", wallet: "ricmoo.eth" },
   { id: "8", name: "dame.eth", ens: "dame.eth", description: "Global Head of ESG at ConsenSys", wallet: "dame.eth" },
 ];
@@ -44,7 +50,7 @@ export const CreatorList = ({ onSelectCreator }: { onSelectCreator: (creator: Cr
         <p className="text-xs text-base-content/60 mb-3">Enter an 0x address or ENS name to tip anyone directly.</p>
         <AddressInput value={search} onChange={setSearch} placeholder="e.g. vitalik.eth or 0x..." />
         {/* Only show "Select" button if it looks like a valid direct tip */}
-        {(isAddress(search) || search.includes(".")) && (
+        {(isAddress(search) || (search as string).includes(".")) && (
           <button
             className="btn btn-primary btn-sm w-full mt-3"
             onClick={() => {
