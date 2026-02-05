@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { CreatorList } from "../components/tipflow/CreatorList";
+import { SessionCreate } from "../components/tipflow/SessionCreate";
+import { SessionStatus } from "../components/tipflow/SessionStatus";
+import { TipControl } from "../components/tipflow/TipControl";
+import { TippingStream } from "../components/tipflow/TippingStream";
+import { useYellowSession } from "../hooks/tipflow/useYellowSession";
 import { NextPage } from "next";
 import { createPublicClient, formatUnits, http } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
 import { useAccount } from "wagmi";
-import { CreatorList } from "~~/components/tipflow/CreatorList";
-import { SessionCreate } from "~~/components/tipflow/SessionCreate";
-import { SessionStatus } from "~~/components/tipflow/SessionStatus";
-import { TipControl } from "~~/components/tipflow/TipControl";
-import { TippingStream } from "~~/components/tipflow/TippingStream";
-import { useYellowSession } from "~~/hooks/tipflow/useYellowSession";
+import { UserIcon } from "@heroicons/react/20/solid";
+import { WalletIcon } from "@heroicons/react/24/outline";
 
 const publicClient = createPublicClient({
   chain: mainnet,
@@ -34,7 +36,7 @@ const Home: NextPage = () => {
     sessionId,
     tips,
     createSession,
-    endSession: hookEndSession, // Rename to avoid conflict if needed, or just use it
+    endSession: hookEndSession,
     addTip,
     totalDeposited,
     tokenDecimals,
@@ -42,12 +44,18 @@ const Home: NextPage = () => {
 
   // Derived state
   const tipsArray = Object.values(tips);
-  const totalTippedVal = tipsArray.length > 0 ? tipsArray.reduce((test, val) => test + val, 0n) : 0n;
+  const totalTippedVal = tipsArray.length > 0 ? tipsArray.reduce((acc, val) => acc + val, 0n) : 0n;
+
   // Format for display
   const balance = totalDeposited > 0n ? formatUnits(totalDeposited - totalTippedVal, tokenDecimals || 18) : "0";
   const totalTippedDisplay = formatUnits(totalTippedVal, tokenDecimals || 18);
 
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const startSession = async (amount: string) => {
     await createSession(amount);
@@ -71,108 +79,139 @@ const Home: NextPage = () => {
     }
 
     // Resolve ENS if needed
-    if (recipientAddress.includes(".")) {
+    if (
+      recipientAddress.includes(".") &&
+      !recipientAddress.includes("..") &&
+      !recipientAddress.startsWith(".") &&
+      !recipientAddress.endsWith(".")
+    ) {
       try {
+        const normalizedName = normalize(recipientAddress);
         const resolved = await publicClient.getEnsAddress({
-          name: normalize(recipientAddress),
+          name: normalizedName,
         });
         if (resolved) {
           recipientAddress = resolved;
-        } else {
-          alert("Could not resolve ENS name");
-          return;
         }
       } catch (e) {
         console.error("ENS Resolution error", e);
-        alert("Error resolving ENS name");
-        return;
+        // Continue with original address if resolution fails
       }
     }
 
     addTip(recipientAddress, amount);
   };
 
+  if (!mounted) return null;
+
+  // ---------------------------------------------------------------------------
+  // View 1: Unauthenticated Hero
+  // ---------------------------------------------------------------------------
   if (!isConnected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 bg-gradient-to-br from-base-100 to-base-200">
-        <div className="text-center max-w-2xl animate-fade-in-up">
-          <h1 className="text-6xl font-black mb-6 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent filter drop-shadow-lg">
-            TipFlow
-          </h1>
-          <p className="text-2xl mb-8 text-base-content/80 font-light">
-            Streaming value to creators <br />
-            <span className="font-bold text-primary">Gasless. Instant. Seamless.</span>
-          </p>
-          <div className="mockup-code bg-base-300 text-base-content shadow-2xl skew-y-2 hover:skew-y-0 transition-transform duration-500 mb-10 w-full max-w-lg mx-auto text-left">
-            <pre data-prefix="$">
-              <code>connect_wallet()</code>
-            </pre>
-            <pre data-prefix=">">
-              <code>Starting session...</code>
-            </pre>
-            <pre data-prefix=">" className="text-success">
-              <code>Gas fees eliminated.</code>
-            </pre>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 text-base-content font-sans p-4">
+        <div className="text-center max-w-2xl mx-auto space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-base-100 border border-base-300 text-sm font-medium text-base-content/60 mb-4 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-primary/60"></span>
+            Powered by Yellow Network
           </div>
-          <p className="text-base-content/60">Connect your wallet to start.</p>
+
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-base-content">
+            Stream Value. <br />
+            <span className="text-primary">Instantly.</span>
+          </h1>
+
+          <p className="text-xl text-base-content/60 leading-relaxed">
+            The gasless tipping protocol for web3 creators. <br className="hidden md:block" />
+            Connect, deposit, and flow. Without the friction.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
+            {/* The Connect Button is handled by RainbowKit in Header usually, but we can have a call to action here */}
+            <p className="text-sm font-medium text-base-content/40">Connect your wallet to get started</p>
+          </div>
         </div>
       </div>
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // View 2: No Active Session (Authenticated)
+  // ---------------------------------------------------------------------------
   if (!sessionId) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 relative overflow-hidden">
-        {/* Background blobs */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-[100px] -z-10 animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/20 rounded-full blur-[100px] -z-10 animate-pulse delay-700"></div>
-
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-base-200">
         <SessionCreate onStartSession={startSession} />
       </div>
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // View 3: Active Dashboard (Main App)
+  // ---------------------------------------------------------------------------
   return (
-    <div className="flex flex-col p-4 md:p-10 max-w-7xl mx-auto min-h-screen">
-      <div className="mb-6 animate-fade-in-down">
-        <h1 className="text-3xl font-bold">Active Session</h1>
-        <p className="text-base-content/60">Connected to Yellow Network State Channel</p>
-      </div>
-
-      <SessionStatus
-        balance={balance}
-        totalTipped={totalTippedDisplay}
-        transactionCount={Object.keys(tips).length}
-        onEndSession={endSession}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Creator Discovery & Selection */}
-        <div className="lg:col-span-4 space-y-6">
-          <CreatorList onSelectCreator={handleSelectCreator} />
-        </div>
-
-        {/* Middle Column: Active Tipping Context */}
-        <div className="lg:col-span-4 space-y-6">
-          {selectedCreator ? (
-            <TipControl
-              recipientName={selectedCreator.name}
-              onSendTip={handleSendTip}
-              disabled={parseFloat(balance) <= 0}
-            />
-          ) : (
-            <div className="glass-panel p-10 rounded-xl flex items-center justify-center text-center h-64 border-2 border-dashed border-base-content/20 bg-base-100/30">
-              <div>
-                <p className="text-lg font-bold opacity-50">Select a creator to start tipping</p>
-              </div>
+    <div className="min-h-screen bg-base-200 p-4 lg:p-8 font-sans">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header / Stats Bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-base-content tracking-tight">Dashboard</h1>
+            <div className="flex items-center gap-2 text-sm text-base-content/60">
+              <span className="w-2 h-2 rounded-full bg-success"></span>
+              State Channel Active
             </div>
-          )}
+          </div>
+
+          <div className="w-full md:w-auto">
+            <SessionStatus
+              balance={balance}
+              totalTipped={totalTippedDisplay}
+              transactionCount={Object.keys(tips).length}
+              onEndSession={endSession}
+            />
+          </div>
         </div>
 
-        {/* Right Column: Live Feed */}
-        <div className="lg:col-span-4">
-          <div className="glass-panel h-[600px] rounded-xl overflow-hidden sticky top-4">
-            <TippingStream />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-180px)] min-h-[600px]">
+          {/* Left Column: Creator Discovery (3 cols) */}
+          <div className="lg:col-span-3 flex flex-col h-full bg-base-100 border border-base-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-base-200 bg-base-50/50">
+              <h2 className="font-bold text-base-content flex items-center gap-2">
+                <UserIcon className="w-4 h-4 text-base-content/50" />
+                Creators
+              </h2>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              <CreatorList onSelectCreator={handleSelectCreator} />
+            </div>
+          </div>
+
+          {/* Middle Column: Active Tipping (6 cols) */}
+          <div className="lg:col-span-6 flex flex-col h-full bg-base-100 border border-base-200 rounded-xl overflow-hidden shadow-sm relative">
+            <div className="absolute inset-0 bg-[url('/grid-clean.svg')] opacity-[0.02]"></div>
+            <div className="flex-1 flex flex-col justify-center p-8 relative z-10">
+              {selectedCreator ? (
+                <TipControl
+                  recipientName={selectedCreator.name}
+                  onSendTip={handleSendTip}
+                  disabled={parseFloat(balance) <= 0}
+                />
+              ) : (
+                <div className="text-center space-y-4 opacity-40">
+                  <div className="w-16 h-16 bg-base-200 rounded-full mx-auto flex items-center justify-center border border-base-300">
+                    <WalletIcon className="w-8 h-8 text-base-content" />
+                  </div>
+                  <p className="text-lg font-medium">Select a creator to start tipping</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Live Feed (3 cols) */}
+          <div className="lg:col-span-3 flex flex-col h-full bg-base-100 border border-base-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="p-4 h-full">
+              <TippingStream />
+            </div>
           </div>
         </div>
       </div>

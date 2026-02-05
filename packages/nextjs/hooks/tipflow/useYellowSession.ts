@@ -27,7 +27,7 @@ export const useYellowSession = () => {
   const [tips, setTips] = useLocalStorage<Record<string, string>>("tipflow-tips", {});
   const [totalDeposited, setTotalDeposited] = useLocalStorage<string>("tipflow-totalDeposited", "0");
 
-  const { data: tipFlowSessionData } = useDeployedContractInfo("TipFlowSession");
+  const { data: tipFlowSessionData } = useDeployedContractInfo({ contractName: "TipFlowSession" });
   const { writeContractAsync: createSessionWrite } = useScaffoldWriteContract({ contractName: "TipFlowSession" });
   const { writeContractAsync: settleSessionWrite } = useScaffoldWriteContract({ contractName: "TipFlowSession" });
 

@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
 
@@ -9,62 +7,62 @@ interface TipControlProps {
   disabled?: boolean;
 }
 
-const PRESET_AMOUNTS = ["0.10", "0.50", "1.00", "5.00"];
-
 export const TipControl = ({ recipientName, onSendTip, disabled }: TipControlProps) => {
-  const [customAmount, setCustomAmount] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [customTip, setCustomTip] = useState("");
 
-  const handleSend = async (amt: string) => {
-    if (!amt || disabled) return;
-    setLoading(true);
-    // Simulate delay
-    await new Promise(r => setTimeout(r, 600));
-    onSendTip(amt);
-    setLoading(false);
-    setCustomAmount("");
+  const handleTip = (amount: string) => {
+    if (!disabled) {
+      onSendTip(amount);
+      setCustomTip("");
+    }
   };
 
   return (
-    <div className="glass-panel p-6 rounded-xl animate-fade-in">
-      <div className="text-center mb-6">
-        <h3 className="text-lg text-base-content/70">Tipping</h3>
-        <h2 className="text-3xl font-bold text-primary">{recipientName}</h2>
+    <div className="flex flex-col h-full items-center justify-center p-6">
+      <div className="text-center mb-8">
+        <h3 className="text-xs uppercase tracking-widest text-base-content/50 mb-2 font-medium">Sending to</h3>
+        <p className="text-3xl font-bold text-base-content tracking-tight">{recipientName}</p>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 mb-4">
-        {PRESET_AMOUNTS.map(amt => (
+      <div className="grid grid-cols-2 gap-3 w-full max-w-xs mb-6">
+        {["1", "5", "10", "20"].map(amount => (
           <button
-            key={amt}
-            disabled={disabled || loading}
-            onClick={() => handleSend(amt)}
-            className="btn btn-outline btn-primary btn-sm hover:glass-btn"
+            key={amount}
+            onClick={() => handleTip(amount)}
+            disabled={disabled}
+            className="btn btn-lg bg-base-100 border border-base-200 hover:border-primary hover:bg-primary/5 hover:text-primary text-xl font-medium shadow-sm transition-all duration-200 rounded-xl"
           >
-            ${amt}
+            ${amount}
           </button>
         ))}
       </div>
 
-      <div className="join w-full mb-4">
-        <span className="join-item btn btn-static bg-base-200 border-base-300">$</span>
-        <input
-          type="number"
-          value={customAmount}
-          onChange={e => setCustomAmount(e.target.value)}
-          placeholder="Custom amount"
-          className="join-item input input-bordered w-full text-center focus:border-secondary"
-          disabled={disabled || loading}
-        />
+      <div className="w-full max-w-xs relative group">
+        <div className="relative flex items-center">
+          <span className="absolute left-4 text-base-content/40 font-medium">$</span>
+          <input
+            type="number"
+            placeholder="Custom amount"
+            value={customTip}
+            onChange={e => setCustomTip(e.target.value)}
+            disabled={disabled}
+            className="input w-full pl-8 pr-12 bg-base-100 border-base-200 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 rounded-xl h-12 transition-all shadow-sm"
+          />
+          <button
+            onClick={() => handleTip(customTip)}
+            disabled={disabled || !customTip}
+            className="absolute right-1 btn btn-sm btn-primary rounded-lg w-10 h-10 min-h-0 border-none shadow-sm"
+          >
+            <PaperAirplaneIcon className="w-4 h-4 -rotate-45 translate-x-px -translate-y-px" />
+          </button>
+        </div>
       </div>
 
-      <button
-        disabled={disabled || loading || !customAmount}
-        onClick={() => handleSend(customAmount)}
-        className={`btn btn-secondary w-full text-lg shadow-lg hover:shadow-secondary/50 ${loading ? "loading" : ""}`}
-      >
-        {!loading && <PaperAirplaneIcon className="w-5 h-5 mr-2" />}
-        Send Tip
-      </button>
+      {disabled && (
+        <p className="text-error text-xs mt-4 font-medium flex items-center gap-1 bg-error/10 px-3 py-1 rounded-full">
+          Insufficent Balance
+        </p>
+      )}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAddress, isAddress } from "viem";
+import { isAddress } from "viem";
 import { normalize } from "viem/ens";
 import { useEnsAddress, useEnsAvatar } from "wagmi";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
@@ -32,13 +32,6 @@ const useDebounce = (value: string, delay: number) => {
  * Input component that handles ENS resolution and address validation.
  */
 export const AddressInput = ({ value, name, placeholder, onChange, disabled }: AddressInputProps) => {
-  // We'll treat the internal value as what the user types (which might be ENS)
-  // But we pass the resolved/validated address/ENS string to parent?
-  // Standard pattern: Parent controls value.
-
-  // Actually, usually parents expect the raw value or the resolved address?
-  // Let's stick to: value is what the user typed.
-
   const debouncedValue = useDebounce(value, 500);
   const isEnsName = debouncedValue.indexOf(".") > -1;
 
@@ -52,30 +45,40 @@ export const AddressInput = ({ value, name, placeholder, onChange, disabled }: A
     chainId: 1,
   });
 
-  return (
-    <div className="form-control w-full">
-      <div className="relative">
-        <input
-          name={name}
-          type="text"
-          placeholder={placeholder}
-          className={`input input-bordered w-full pr-12 ${isEnsName && ensAddress ? "input-success" : ""} ${!isEnsName && isAddress(value) ? "input-success" : ""} ${value && !isEnsName && !isAddress(value) ? "input-error" : ""}`}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          disabled={disabled}
-          autoComplete="off"
-        />
+  const isInvalid = value.length > 0 && !isEnsName && !isAddress(value);
+  const isValid = (isEnsName && ensAddress) || (!isEnsName && isAddress(value));
 
-        {/* Avatar Preview */}
-        {value && (isAddress(value) || ensAddress) && (
-          <div className="absolute top-2 right-2 flex items-center gap-2 pointer-events-none">
-            <span className="text-xs text-base-content/50 hidden sm:block">
-              {ensAddress ? ensAddress.slice(0, 6) + "..." + ensAddress.slice(-4) : ""}
-            </span>
-            <BlockieAvatar address={ensAddress || value} ensImage={ensAvatar || undefined} size={30} />
-          </div>
-        )}
-      </div>
+  return (
+    <div className="w-full relative group">
+      <input
+        name={name}
+        type="text"
+        placeholder={placeholder}
+        className={`w-full px-4 py-3 bg-base-100 border text-base-content rounded-xl transition-all outline-none
+          ${
+            isInvalid
+              ? "border-error focus:ring-1 focus:ring-error"
+              : isValid
+                ? "border-success/50 focus:border-success focus:ring-1 focus:ring-success/20"
+                : "border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/10"
+          }
+          placeholder:text-base-content/40 disabled:bg-base-200 disabled:text-base-content/40 font-mono text-sm
+        `}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        disabled={disabled}
+        autoComplete="off"
+      />
+
+      {/* Avatar Preview */}
+      {value && (isAddress(value) || ensAddress) && (
+        <div className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center gap-2 pointer-events-none p-1 bg-base-100 rounded-lg border border-base-200 shadow-sm">
+          <span className="text-xs text-base-content/50 hidden sm:block font-mono px-1">
+            {ensAddress ? ensAddress.slice(0, 6) + "..." + ensAddress.slice(-4) : ""}
+          </span>
+          <BlockieAvatar address={ensAddress || value} ensImage={ensAvatar || undefined} size={24} />
+        </div>
+      )}
     </div>
   );
 };
