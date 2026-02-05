@@ -15,10 +15,14 @@ interface Creator {
 }
 
 const MOCK_CREATORS: Creator[] = [
-  { id: "1", name: "Vitalik Buterin", ens: "vitalik.eth", description: "Ethereum Co-founder" },
-  { id: "2", name: "Hayden Adams", ens: "hayden.eth", description: "Uniswap Inventor" },
-  { id: "3", name: "Stani Kulechov", ens: "stani.eth", description: "Lens Protocol Founder" },
-  { id: "4", name: "Linda Xie", ens: "linda.eth", description: "Scalar Capital" },
+  { id: "1", name: "Vitalik Buterin", ens: "vitalik.eth", description: "Ethereum Co-founder", wallet: "vitalik.eth" },
+  { id: "2", name: "Hayden Adams", ens: "hayden.eth", description: "Uniswap Inventor", wallet: "hayden.eth" },
+  { id: "3", name: "Nick Johnson", ens: "nick.eth", description: "Lead Developer of ENS", wallet: "nick.eth" },
+  { id: "4", name: "Stani Kulechov", ens: "stani.eth", description: "Founder of Aave & Lens", wallet: "stani.eth" },
+  { id: "5", name: "Linda Xie", ens: "linda.eth", description: "Co-founder Scalar Capital", wallet: "linda.eth" },
+  { id: "6", name: "Anthony Sassano", ens: "sassal.eth", description: "The Daily Gwei / Educator", wallet: "sassal.eth" },
+  { id: "7", name: "Richard Moore", ens: "ricmoo.eth", description: "Author of Ethers.js", wallet: "ricmoo.eth" },
+  { id: "8", name: "dame.eth", ens: "dame.eth", description: "Global Head of ESG at ConsenSys", wallet: "dame.eth" },
 ];
 
 export const CreatorList = ({ onSelectCreator }: { onSelectCreator: (creator: Creator) => void }) => {

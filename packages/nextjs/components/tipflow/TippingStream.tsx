@@ -11,8 +11,8 @@ interface TipEvent {
 }
 
 const MOCK_TIPS: TipEvent[] = [
-  { id: "1", sender: "You", recipient: "Vitalik", amount: "0.50", timestamp: Date.now() - 5000 },
-  { id: "2", sender: "You", recipient: "Hayden", amount: "1.00", timestamp: Date.now() - 15000 },
+  { id: "1", sender: "You", recipient: "vitalik.eth", amount: "0.50", timestamp: Date.now() - 5000 },
+  { id: "2", sender: "You", recipient: "hayden.eth", amount: "1.00", timestamp: Date.now() - 15000 },
 ];
 
 export const TippingStream = () => {
@@ -25,8 +25,8 @@ export const TippingStream = () => {
       if (Math.random() > 0.9) {
         const newTip = {
           id: Date.now().toString(),
-          sender: "Anon.eth",
-          recipient: "Vitalik",
+          sender: "anon.eth",
+          recipient: ["vitalik.eth", "hayden.eth", "nick.eth", "sassal.eth"][Math.floor(Math.random() * 4)],
           amount: (Math.random() * 2).toFixed(2),
           timestamp: Date.now(),
         };
