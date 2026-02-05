@@ -34,6 +34,13 @@ contract TipFlowSession {
         uint256 refundAmount
     );
 
+    event TipReceived(
+        address indexed recipient,
+        uint256 amount,
+        address indexed tipper,
+        bytes32 indexed sessionId
+    );
+
     constructor(address _usdcToken) {
         usdcToken = IERC20(_usdcToken);
     }
@@ -98,6 +105,7 @@ contract TipFlowSession {
         for (uint256 i = 0; i < _recipients.length; i++) {
             if (_amounts[i] > 0) {
                 require(usdcToken.transfer(_recipients[i], _amounts[i]), "Transfer to recipient failed");
+                emit TipReceived(_recipients[i], _amounts[i], session.creator, _sessionId);
             }
         }
 

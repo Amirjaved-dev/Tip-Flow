@@ -99,10 +99,11 @@
 }
 
 @utility clean-btn {
-  @apply btn btn-primary no-animation shadow-sm hover:shadow-md;
+  @apply btn btn-primary shadow-sm hover:shadow-md;
 }
 
 @layer base {
+
   *,
   ::after,
   ::before,

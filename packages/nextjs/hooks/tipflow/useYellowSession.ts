@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocalStorage } from "usehooks-ts";
 import { encodePacked, erc20Abi, keccak256, parseUnits, toBytes, toHex } from "viem";
 import { usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
@@ -123,6 +124,30 @@ export const useYellowSession = () => {
     notification.success(`Tipped ${amount} to ${recipient}`);
   };
 
+  // Validate session on-chain to handle chain resets or desyncs
+  const { data: sessionInfo } = useScaffoldReadContract({
+    contractName: "TipFlowSession",
+    functionName: "sessions",
+    args: [sessionId ? (sessionId as `0x${string}`) : "0x0000000000000000000000000000000000000000000000000000000000000000"],
+    watch: true,
+    enabled: !!sessionId,
+  });
+
+  useEffect(() => {
+    // If we have a local session ID but the chain says it's inactive or doesn't exist (creator == 0),
+    // we should clear the local state to prevent "Session not active" errors.
+    if (sessionId && sessionInfo) {
+      const [creator, , isActive] = sessionInfo;
+      // If inactive OR creator is zero address (implies chain reset/doesn't exist)
+      if (!isActive || creator === "0x0000000000000000000000000000000000000000") {
+        console.log("Session invalid or inactive on-chain. Clearing local state.");
+        setSessionId(null);
+        setTips({});
+        setTotalDeposited("0");
+      }
+    }
+  }, [sessionId, sessionInfo, setSessionId, setTips, setTotalDeposited]);
+
   const endSession = async () => {
     if (!sessionId) {
       return;
@@ -156,9 +181,17 @@ export const useYellowSession = () => {
       setSessionId(null);
       setTotalDeposited("0");
       notification.success("Session Settled!");
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      notification.error("Settlement failed");
+      // Handle the specific "Session is not active" error
+      if (e.message && (e.message.includes("Session is not active") || e.message.includes("Session not active"))) {
+        notification.error("Session no longer active on-chain. Clearing local state.");
+        setSessionId(null);
+        setTips({});
+        setTotalDeposited("0");
+      } else {
+        notification.error("Settlement failed");
+      }
     }
   };
 
