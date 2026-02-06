@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   11155111: {
     TipFlowSession: {
-      address: "0x848A9968E8a9D0D6dca34BF42603A0F3f3d76B4B",
+      address: "0x34A1cA793F159497c988B7f3e68050e7cAeAb825",
       abi: [
         {
           inputs: [
@@ -118,6 +118,25 @@ const deployedContracts = {
               name: "amount",
               type: "uint256",
             },
+          ],
+          name: "TipAvailable",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
             {
               indexed: true,
               internalType: "address",
@@ -135,6 +154,25 @@ const deployedContracts = {
           type: "event",
         },
         {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "Withdrawn",
+          type: "event",
+        },
+        {
           inputs: [
             {
               internalType: "bytes32",
@@ -145,6 +183,25 @@ const deployedContracts = {
           name: "abortSession",
           outputs: [],
           stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          name: "balances",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
           type: "function",
         },
         {
@@ -236,12 +293,19 @@ const deployedContracts = {
           stateMutability: "view",
           type: "function",
         },
+        {
+          inputs: [],
+          name: "withdraw",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 10198782,
+      deployedOnBlock: 10199313,
     },
     YourContract: {
-      address: "0xAD87c9BAAEd6E54F22D9B2042AF517Cc31A24e8c",
+      address: "0xA94eE42320aC1d06785dC4d928cf61fd54063085",
       abi: [
         {
           inputs: [
@@ -382,7 +446,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 10198781,
+      deployedOnBlock: 10199312,
     },
   },
 } as const;

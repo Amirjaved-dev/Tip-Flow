@@ -31,6 +31,7 @@ export const useYellowSession = () => {
   const { data: tipFlowSessionData } = useDeployedContractInfo({ contractName: "TipFlowSession" });
   const { writeContractAsync: createSessionWrite } = useScaffoldWriteContract({ contractName: "TipFlowSession" });
   const { writeContractAsync: settleSessionWrite } = useScaffoldWriteContract({ contractName: "TipFlowSession" });
+  const { writeContractAsync: withdrawWrite } = useScaffoldWriteContract({ contractName: "TipFlowSession" });
 
   const { data: usdcTokenAddress } = useScaffoldReadContract({
     contractName: "TipFlowSession",
@@ -128,9 +129,13 @@ export const useYellowSession = () => {
   const { data: sessionInfo } = useScaffoldReadContract({
     contractName: "TipFlowSession",
     functionName: "sessions",
-    args: [sessionId ? (sessionId as `0x${string}`) : "0x0000000000000000000000000000000000000000000000000000000000000000"],
+    args: [
+      sessionId ? (sessionId as `0x${string}`) : "0x0000000000000000000000000000000000000000000000000000000000000000",
+    ],
     watch: true,
-    enabled: !!sessionId,
+    query: {
+      enabled: !!sessionId,
+    },
   });
 
   useEffect(() => {
@@ -195,6 +200,18 @@ export const useYellowSession = () => {
     }
   };
 
+  const withdraw = async () => {
+    try {
+      await withdrawWrite({
+        functionName: "withdraw",
+      });
+      notification.success("Funds withdrawn successfully!");
+    } catch (e) {
+      console.error(e);
+      notification.error("Withdraw failed");
+    }
+  };
+
   // Convert internal string state to BigInts for consumers if they expect BigInt
   // But wait, page.tsx expects bigint in 'tips'.
   const tipsBigInt: Record<string, bigint> = {};
@@ -209,6 +226,7 @@ export const useYellowSession = () => {
     addTip,
     createSession,
     endSession,
+    withdraw, // Expose withdraw function
     totalDeposited: BigInt(totalDeposited), // Return BigInt version
     tokenDecimals,
   };

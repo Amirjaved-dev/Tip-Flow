@@ -25,6 +25,7 @@ contract TipFlowSession {
 
     // specific sessionId to session details
     mapping(bytes32 => Session) public sessions;
+    mapping(address => uint256) public balances;
 
     event SessionCreated(bytes32 indexed sessionId, address indexed creator, uint256 amount);
     event SessionSettled(
@@ -40,6 +41,9 @@ contract TipFlowSession {
         address indexed tipper,
         bytes32 indexed sessionId
     );
+    
+    event TipAvailable(address indexed recipient, uint256 amount);
+    event Withdrawn(address indexed recipient, uint256 amount);
 
     constructor(address _usdcToken) {
         usdcToken = IERC20(_usdcToken);
@@ -101,21 +105,41 @@ contract TipFlowSession {
         // Effects: Close Session
         session.isActive = false;
 
-        // Interactions: Distribute Tips
+        // Interactions: Credit Balances (Pull Payment)
         for (uint256 i = 0; i < _recipients.length; i++) {
             if (_amounts[i] > 0) {
-                require(usdcToken.transfer(_recipients[i], _amounts[i]), "Transfer to recipient failed");
+                balances[_recipients[i]] += _amounts[i];
+                // Emit TipReceived for tracking/history
                 emit TipReceived(_recipients[i], _amounts[i], session.creator, _sessionId);
+                // Emit TipAvailable to signal funds are ready using standard event pattern if desired, 
+                // but TipReceived + Withdrawn might be enough. Let's add specific one for clarity.
+                emit TipAvailable(_recipients[i], _amounts[i]);
             }
         }
 
-        // Refund remaining balance to creator
+        // Refund remaining balance to creator directly (Push for refund is fine as it's the caller)
         uint256 refund = session.totalAmount - totalToDistribute;
         if (refund > 0) {
-            require(usdcToken.transfer(session.creator, refund), "Refund failed");
+            bool success = usdcToken.transfer(session.creator, refund);
+            require(success, "Refund failed");
         }
 
         emit SessionSettled(_sessionId, session.creator, totalToDistribute, refund);
+    }
+
+    /**
+     * @notice Allows a user to withdraw their available balance.
+     */
+    function withdraw() external {
+        uint256 amount = balances[msg.sender];
+        require(amount > 0, "No funds to withdraw");
+
+        balances[msg.sender] = 0;
+
+        bool success = usdcToken.transfer(msg.sender, amount);
+        require(success, "Withdraw transfer failed");
+
+        emit Withdrawn(msg.sender, amount);
     }
 
     /**
