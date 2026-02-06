@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   11155111: {
     TipFlowSession: {
-      address: "0x34A1cA793F159497c988B7f3e68050e7cAeAb825",
+      address: "0x9cf8ec13278F8e812891c773f91b17C74D6DA580",
       abi: [
         {
           inputs: [
@@ -302,10 +302,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 10199313,
+      deployedOnBlock: 10205418,
     },
     YourContract: {
-      address: "0xA94eE42320aC1d06785dC4d928cf61fd54063085",
+      address: "0x540BB42A8e1d9d14da65FA427Ff93545c76FF454",
       abi: [
         {
           inputs: [
@@ -446,7 +446,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 10199312,
+      deployedOnBlock: 10205416,
     },
   },
 } as const;

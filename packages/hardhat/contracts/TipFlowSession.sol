@@ -94,13 +94,15 @@ contract TipFlowSession {
 
         require(totalToDistribute <= session.totalAmount, "Insufficient session balance");
 
-        // Verify Signature
-        // The message signed off-chain should be hash(sessionId, recipients, amounts)
-        bytes32 messageHash = keccak256(abi.encodePacked(_sessionId, _recipients, _amounts));
-        bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
-        address signer = ethSignedMessageHash.recover(_signature);
+        // Verify Signature if not called by creator directly
+        if (msg.sender != session.creator) {
+            // The message signed off-chain should be hash(sessionId, recipients, amounts)
+            bytes32 messageHash = keccak256(abi.encodePacked(_sessionId, _recipients, _amounts));
+            bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
+            address signer = ethSignedMessageHash.recover(_signature);
 
-        require(signer == session.creator, "Invalid signature");
+            require(signer == session.creator, "Invalid signature");
+        }
 
         // Effects: Close Session
         session.isActive = false;
