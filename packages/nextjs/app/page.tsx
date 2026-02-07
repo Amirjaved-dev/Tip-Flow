@@ -225,10 +225,23 @@ export default function LandingPage() {
             {/* Trusted By Marquee */}
             <section className="py-10 border-y border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20 overflow-hidden">
                 <div className="flex gap-16 items-center animate-marquee whitespace-nowrap">
-                    {[1, 2, 3, 4, 1, 2, 3, 4].map((_, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xl font-bold text-gray-400 dark:text-gray-600 grayscale hover:grayscale-0 transition-all cursor-default">
-                            <span className="w-6 h-6 rounded bg-current opacity-50"></span>
-                            <span>PARTNER{i}</span>
+                    {[1, 2, 3, 4].map((index) => (
+                        <div key={`set-${index}`} className="flex items-center gap-16">
+                            {/* ENS */}
+                            <div className="flex items-center gap-2 text-xl font-bold text-gray-400 dark:text-gray-600 grayscale hover:grayscale-0 transition-all cursor-default">
+                                <span className="w-6 h-6 rounded bg-current opacity-50"></span>
+                                <span>ENS</span>
+                            </div>
+                            {/* Yellow.org */}
+                            <div className="flex items-center gap-2 text-xl font-bold text-gray-400 dark:text-gray-600 grayscale hover:grayscale-0 transition-all cursor-default">
+                                <span className="w-6 h-6 rounded bg-current opacity-50"></span>
+                                <span>Yellow.org</span>
+                            </div>
+                            {/* ETH Global */}
+                            <div className="flex items-center gap-2 text-xl font-bold text-gray-400 dark:text-gray-600 grayscale hover:grayscale-0 transition-all cursor-default">
+                                <span className="w-6 h-6 rounded bg-current opacity-50"></span>
+                                <span>ETH Global</span>
+                            </div>
                         </div>
                     ))}
                 </div>

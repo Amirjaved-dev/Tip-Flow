@@ -16,6 +16,8 @@ contract TipFlowSession {
     using MessageHashUtils for bytes32;
 
     IERC20 public immutable usdcToken;
+    address public immutable platformWallet;
+    uint256 public constant PLATFORM_FEE_PERCENTAGE = 1; // 1% fee
 
     struct Session {
         address creator;
@@ -44,9 +46,12 @@ contract TipFlowSession {
     
     event TipAvailable(address indexed recipient, uint256 amount);
     event Withdrawn(address indexed recipient, uint256 amount);
+    event FeeCollected(bytes32 indexed sessionId, uint256 feeAmount);
 
-    constructor(address _usdcToken) {
+    constructor(address _usdcToken, address _platformWallet) {
+        require(_platformWallet != address(0), "Invalid platform wallet");
         usdcToken = IERC20(_usdcToken);
+        platformWallet = _platformWallet;
     }
 
     /**
@@ -117,8 +122,16 @@ contract TipFlowSession {
             }
         }
 
-        // Refund remaining balance to creator directly (Push for refund is fine as it's the caller)
-        uint256 refund = session.totalAmount - totalToDistribute;
+        // Calculate and transfer 1% platform fee
+        uint256 platformFee = (totalToDistribute * PLATFORM_FEE_PERCENTAGE) / 100;
+        if (platformFee > 0) {
+            bool feeSuccess = usdcToken.transfer(platformWallet, platformFee);
+            require(feeSuccess, "Fee transfer failed");
+            emit FeeCollected(_sessionId, platformFee);
+        }
+
+        // Refund remaining balance to creator (after tips and fee)
+        uint256 refund = session.totalAmount - totalToDistribute - platformFee;
         if (refund > 0) {
             bool success = usdcToken.transfer(session.creator, refund);
             require(success, "Refund failed");

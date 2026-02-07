@@ -18,7 +18,11 @@ describe("TipFlowSession", function () {
 
     // Deploy TipFlowSession
     const TipFlowSessionFactory = await ethers.getContractFactory("TipFlowSession");
-    tipFlowSession = (await TipFlowSessionFactory.deploy(await usdc.getAddress())) as TipFlowSession;
+    const platformWallet = "0x78c5FEb77d691697532741594189DcDAbb69da87";
+    tipFlowSession = (await TipFlowSessionFactory.deploy(
+      await usdc.getAddress(),
+      platformWallet,
+    )) as TipFlowSession;
     await tipFlowSession.waitForDeployment();
   });
 

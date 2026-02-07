@@ -7,13 +7,18 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   11155111: {
     TipFlowSession: {
-      address: "0x34A1cA793F159497c988B7f3e68050e7cAeAb825",
+      address: "0x6F777694656f4b74e70aAB0CD9Cf0143c2d7E02d",
       abi: [
         {
           inputs: [
             {
               internalType: "address",
               name: "_usdcToken",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_platformWallet",
               type: "address",
             },
           ],
@@ -46,6 +51,25 @@ const deployedContracts = {
           ],
           name: "ECDSAInvalidSignatureS",
           type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "sessionId",
+              type: "bytes32",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "feeAmount",
+              type: "uint256",
+            },
+          ],
+          name: "FeeCollected",
+          type: "event",
         },
         {
           anonymous: false,
@@ -173,6 +197,19 @@ const deployedContracts = {
           type: "event",
         },
         {
+          inputs: [],
+          name: "PLATFORM_FEE_PERCENTAGE",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
           inputs: [
             {
               internalType: "bytes32",
@@ -221,6 +258,19 @@ const deployedContracts = {
             },
           ],
           stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "platformWallet",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
           type: "function",
         },
         {
@@ -302,10 +352,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 10199313,
+      deployedOnBlock: 10210878,
     },
     YourContract: {
-      address: "0xA94eE42320aC1d06785dC4d928cf61fd54063085",
+      address: "0x8241583A2F732Fb8d67E6ECD55A0809d7cECCFa5",
       abi: [
         {
           inputs: [
@@ -446,7 +496,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 10199312,
+      deployedOnBlock: 10210876,
     },
   },
 } as const;

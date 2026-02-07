@@ -39,10 +39,13 @@ const deployTipFlow: DeployFunction = async function (hre: HardhatRuntimeEnviron
     console.log("Using Sepolia USDC verified address:", usdcAddress);
   }
 
+  // Platform wallet for 1% fees
+  const platformWallet = "0x78c5FEb77d691697532741594189DcDAbb69da87";
+
   await deploy("TipFlowSession", {
     from: deployer,
     // Contract constructor arguments
-    args: [usdcAddress],
+    args: [usdcAddress, platformWallet],
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
     // automatically mining the contract deployment transaction. There is no effect on live networks.

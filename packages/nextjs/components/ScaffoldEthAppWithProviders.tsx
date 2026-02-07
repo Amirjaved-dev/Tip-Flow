@@ -7,23 +7,17 @@ import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { useTheme } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { WagmiProvider } from "wagmi";
-import { Footer } from "~~/components/Footer";
-import { Header } from "~~/components/Header";
+
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
-import { usePathname } from "next/navigation";
+
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
-  const pathname = usePathname();
-  const isLandingPage = pathname === "/page1";
-
   return (
     <>
-      <div className={`flex flex-col min-h-screen `}>
-        {!isLandingPage && <Header />}
+      <div className={`flex flex-col min-h-screen`}>
         <main className="relative flex flex-col flex-1">{children}</main>
-        {!isLandingPage && <Footer />}
       </div>
       <Toaster />
     </>
