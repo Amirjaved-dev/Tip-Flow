@@ -12,6 +12,7 @@ import { createPublicClient, formatUnits, http } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
 import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { UserIcon } from "@heroicons/react/20/solid";
 import { WalletIcon } from "@heroicons/react/24/outline";
 
@@ -132,10 +133,61 @@ const Home: NextPage = () => {
             Instant settlement through state channels.
           </p>
 
-          {/* CTA - Note: RainbowKit ConnectButton is in the header */}
+          {/* CTA - RainbowKit ConnectButton */}
           <div className="pt-4">
-            <p className="text-base text-gray-500 dark:text-gray-500 mb-6">
-              Connect your wallet to get started
+            <div className="mb-6">
+              <ConnectButton.Custom>
+                {({
+                  account,
+                  chain,
+                  openAccountModal,
+                  openChainModal,
+                  openConnectModal,
+                  authenticationStatus,
+                  mounted,
+                }) => {
+                  const ready = mounted && authenticationStatus !== 'loading';
+                  const connected =
+                    ready &&
+                    account &&
+                    chain &&
+                    (!authenticationStatus ||
+                      authenticationStatus === 'authenticated');
+
+                  return (
+                    <div
+                      {...(!ready && {
+                        'aria-hidden': true,
+                        'style': {
+                          opacity: 0,
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        },
+                      })}
+                    >
+                      {(() => {
+                        if (!connected) {
+                          return (
+                            <button
+                              onClick={openConnectModal}
+                              type="button"
+                              className="px-8 py-4 bg-black dark:bg-white text-white dark:text-black font-semibold text-lg rounded-xl hover:bg-gray-800 dark:hover:bg-gray-200 transition-all hover:shadow-lg active:scale-95"
+                            >
+                              Connect Wallet
+                            </button>
+                          );
+                        }
+
+                        return null;
+                      })()}
+                    </div>
+                  );
+                }}
+              </ConnectButton.Custom>
+            </div>
+
+            <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
+              Get started in seconds
             </p>
 
             {/* Trust Signals */}
