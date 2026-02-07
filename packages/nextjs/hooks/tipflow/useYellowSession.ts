@@ -1,7 +1,10 @@
 "use client";
+
 import { useEffect } from "react";
+import { useSmartAccount } from "./useSmartAccount";
 import { useLocalStorage } from "usehooks-ts";
 import { erc20Abi, formatUnits, keccak256, parseUnits, toHex } from "viem";
+import { encodeFunctionData } from "viem";
 import { sepolia } from "viem/chains";
 import { usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
@@ -14,9 +17,6 @@ export type Campaign = {
   remainingAmount: string;
   tips: Record<string, string>; // recipient -> amount
 };
-
-import { useSmartAccount } from "./useSmartAccount";
-import { encodeFunctionData } from "viem";
 
 export const useYellowSession = () => {
   const { smartAccountClient } = useSmartAccount();
@@ -49,9 +49,7 @@ export const useYellowSession = () => {
   const usdcAbi = [
     ...erc20Abi,
     {
-      inputs: [
-        { name: "owner", type: "address" },
-      ],
+      inputs: [{ name: "owner", type: "address" }],
       name: "nonces",
       outputs: [{ name: "uint256", type: "uint256" }],
       stateMetrics: "view",
@@ -139,7 +137,7 @@ export const useYellowSession = () => {
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600); // 1 hour
         const domain = {
           name: "USDC", // Standard USDC name on Sepolia
-          version: "2",     // Standard USDC version on Sepolia
+          version: "2", // Standard USDC version on Sepolia
           chainId: sepolia.id,
           verifyingContract: usdcTokenAddress,
         };
@@ -170,8 +168,8 @@ export const useYellowSession = () => {
         });
 
         // Split Signature (r, s, v)
-        // viem signature is hex string, needed to split? 
-        // Actually permit function takes v, r, s. 
+        // viem signature is hex string, needed to split?
+        // Actually permit function takes v, r, s.
         // We can use viem's parseSignature? No need, manual slice works or viem utils.
         const { r, s, v } = await import("viem").then(m => m.parseSignature(signature));
 
@@ -258,7 +256,6 @@ export const useYellowSession = () => {
           }
         }
       }
-
     } catch (e) {
       console.error(e);
       notification.error("Failed to create session");

@@ -12,13 +12,18 @@ import { Header } from "~~/components/Header";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
+import { usePathname } from "next/navigation";
+
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const isLandingPage = pathname === "/page1";
+
   return (
     <>
       <div className={`flex flex-col min-h-screen `}>
-        <Header />
+        {!isLandingPage && <Header />}
         <main className="relative flex flex-col flex-1">{children}</main>
-        <Footer />
+        {!isLandingPage && <Footer />}
       </div>
       <Toaster />
     </>
