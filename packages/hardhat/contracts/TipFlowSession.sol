@@ -100,44 +100,41 @@ contract TipFlowSession {
         require(totalToDistribute <= session.totalAmount, "Insufficient session balance");
 
         // Verify Signature
-        // The message signed off-chain should be hash(sessionId, recipients, amounts)
         bytes32 messageHash = keccak256(abi.encodePacked(_sessionId, _recipients, _amounts));
-        bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
-        address signer = ethSignedMessageHash.recover(_signature);
-
-        require(signer == session.creator, "Invalid signature");
+        require(messageHash.toEthSignedMessageHash().recover(_signature) == session.creator, "Invalid signature");
 
         // Effects: Close Session
         session.isActive = false;
 
-        // Interactions: Credit Balances (Pull Payment)
+        // Interactions: Credit Balances with fee deducted from creator's portion
+        uint256 totalFee = 0;
         for (uint256 i = 0; i < _recipients.length; i++) {
             if (_amounts[i] > 0) {
-                balances[_recipients[i]] += _amounts[i];
-                // Emit TipReceived for tracking/history
+                // Calculate 1% fee and amount creator receives
+                uint256 fee = (_amounts[i] * PLATFORM_FEE_PERCENTAGE) / 100;
+                totalFee += fee;
+                
+                // Credit creator with amount after fee
+                balances[_recipients[i]] += _amounts[i] - fee;
+                
+                // Emit events
                 emit TipReceived(_recipients[i], _amounts[i], session.creator, _sessionId);
-                // Emit TipAvailable to signal funds are ready using standard event pattern if desired, 
-                // but TipReceived + Withdrawn might be enough. Let's add specific one for clarity.
-                emit TipAvailable(_recipients[i], _amounts[i]);
+                emit TipAvailable(_recipients[i], _amounts[i] - fee);
             }
         }
 
-        // Calculate and transfer 1% platform fee
-        uint256 platformFee = (totalToDistribute * PLATFORM_FEE_PERCENTAGE) / 100;
-        if (platformFee > 0) {
-            bool feeSuccess = usdcToken.transfer(platformWallet, platformFee);
-            require(feeSuccess, "Fee transfer failed");
-            emit FeeCollected(_sessionId, platformFee);
+        // Transfer accumulated platform fees
+        if (totalFee > 0) {
+            require(usdcToken.transfer(platformWallet, totalFee), "Fee transfer failed");
+            emit FeeCollected(_sessionId, totalFee);
         }
 
-        // Refund remaining balance to creator (after tips and fee)
-        uint256 refund = session.totalAmount - totalToDistribute - platformFee;
-        if (refund > 0) {
-            bool success = usdcToken.transfer(session.creator, refund);
-            require(success, "Refund failed");
+        // Refund remaining balance to tipper
+        if (session.totalAmount > totalToDistribute) {
+            require(usdcToken.transfer(session.creator, session.totalAmount - totalToDistribute), "Refund failed");
         }
 
-        emit SessionSettled(_sessionId, session.creator, totalToDistribute, refund);
+        emit SessionSettled(_sessionId, session.creator, totalToDistribute, session.totalAmount - totalToDistribute);
     }
 
     /**
