@@ -150,7 +150,7 @@ export default function LandingPage() {
                             </Link>
                         ))}
                         <Link
-                            href="/"
+                            href="/app"
                             className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-200 transition-all hover:scale-105 active:scale-95"
                         >
                             Launch App
@@ -193,7 +193,7 @@ export default function LandingPage() {
 
                         <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                             <Link
-                                href="/"
+                                href="/app"
                                 className="group flex items-center justify-center gap-2 bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-full text-base font-bold hover:shadow-xl hover:shadow-black/20 dark:hover:shadow-white/20 transition-all hover:-translate-y-1"
                             >
                                 Get Your Tip Link
@@ -465,7 +465,7 @@ export default function LandingPage() {
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
-                            href="/"
+                            href="/app"
                             className="bg-black dark:bg-white text-white dark:text-black px-8 py-4 md:px-10 md:py-5 rounded-full text-lg md:text-xl font-bold hover:shadow-2xl hover:-translate-y-1 transition-all"
                         >
                             Start Tipping Now
