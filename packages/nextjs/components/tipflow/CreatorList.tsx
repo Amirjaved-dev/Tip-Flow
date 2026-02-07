@@ -31,14 +31,14 @@ const MOCK_CREATORS: Creator[] = [
   {
     id: "2",
     name: "Andreas M.",
-    wallet: "0x123...456", // Placeholder or real
+    wallet: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
     description: "Mastering Bitcoin & Ethereum.",
     tags: ["Education", "Tech"],
   },
   {
     id: "3",
     name: "Bankless",
-    wallet: "0x456...789",
+    wallet: "0x3c5Aac016EF2F178e8699D6208796A2D67557fe2",
     description: "The ultimate guide to crypto finance.",
     tags: ["Podcast", "DeFi"],
     isLive: true,
@@ -46,7 +46,7 @@ const MOCK_CREATORS: Creator[] = [
   {
     id: "4",
     name: "GitCoin",
-    wallet: "0x789...012",
+    wallet: "0xde21F729137C5Af1b01d73aF1dC21eFfa2B8a0d6",
     description: "Funding public goods.",
     tags: ["Public Goods"],
   },

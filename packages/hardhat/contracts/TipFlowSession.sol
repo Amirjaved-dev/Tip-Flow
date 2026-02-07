@@ -7,6 +7,22 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "hardhat/console.sol";
 
 /**
+ * @dev Interface for the ERC1271 standard verification of signatures for smart accounts.
+ */
+interface IERC1271 {
+    /**
+     * @dev Should return whether the signature provided is valid for the provided hash
+     * @param _hash      Hash of the data to be signed
+     * @param _signature Signature byte array associated with _hash
+     *
+     * MUST return the bytes4 magic value 0x1626ba7e when function passes.
+     * MUST NOT modify state (using STATICCALL for implementing this check).
+     * MUST allow external calls
+     */
+    function isValidSignature(bytes32 _hash, bytes calldata _signature) external view returns (bytes4 magicValue);
+}
+
+/**
  * @title TipFlowSession
  * @notice Validates off-chain tipping sessions and handles on-chain settlement.
  * @dev Intended for Hackathon MVP. Implements Yellow Network-style state channel logic simplified.
@@ -101,7 +117,25 @@ contract TipFlowSession {
 
         // Verify Signature
         bytes32 messageHash = keccak256(abi.encodePacked(_sessionId, _recipients, _amounts));
-        require(messageHash.toEthSignedMessageHash().recover(_signature) == session.creator, "Invalid signature");
+        bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
+        
+        bool isValid = false;
+        if (session.creator.code.length > 0) {
+            // Smart Account (ERC-1271)
+            // Pass the raw messageHash to Safe - Safe handles its own hashing internally
+            // For eth_sign signatures, the signer should sign prefix(safeMessageHash)
+            // where safeMessageHash = keccak256(0x19, 0x01, domainSeparator, keccak256(abi.encode(messageHash)))
+            try IERC1271(session.creator).isValidSignature(messageHash, _signature) returns (bytes4 magicValue) {
+                isValid = (magicValue == 0x1626ba7e);
+            } catch {
+                isValid = false;
+            }
+        } else {
+            // EOA
+            isValid = (ethSignedMessageHash.recover(_signature) == session.creator);
+        }
+
+        require(isValid, "Invalid signature");
 
         // Effects: Close Session
         session.isActive = false;

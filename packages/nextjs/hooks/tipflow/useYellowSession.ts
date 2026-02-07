@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useSmartAccount } from "./useSmartAccount";
 import { useLocalStorage } from "usehooks-ts";
-import { erc20Abi, formatUnits, keccak256, parseUnits, toHex } from "viem";
+import { erc20Abi, formatUnits, keccak256, parseUnits, toHex, encodeAbiParameters, concat, toBytes, getAddress } from "viem";
 import { encodeFunctionData } from "viem";
 import { sepolia } from "viem/chains";
 import { usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
@@ -19,7 +19,7 @@ export type Campaign = {
 };
 
 export const useYellowSession = () => {
-  const { smartAccountClient } = useSmartAccount();
+  const { smartAccountClient, smartAccountAddress } = useSmartAccount();
   const { data: walletClient } = useWalletClient();
 
   // Persist session state
@@ -52,7 +52,7 @@ export const useYellowSession = () => {
       inputs: [{ name: "owner", type: "address" }],
       name: "nonces",
       outputs: [{ name: "uint256", type: "uint256" }],
-      stateMetrics: "view",
+      stateMutability: "view",
       type: "function",
     },
     {
@@ -89,155 +89,175 @@ export const useYellowSession = () => {
   const createSession = async (amount: string) => {
     if (!amount || !tipFlowSessionData || !publicClient || !usdcTokenAddress || tokenDecimals === undefined) return;
 
-    if (!smartAccountClient) {
-      notification.error("Smart Account not ready. Please wait...");
+    if (!walletClient || !walletClient.account) {
+      notification.error("Please connect your wallet");
       return;
     }
 
     try {
       const amountWei = parseUnits(amount, tokenDecimals);
-      const smartAccountAddress = smartAccountClient.account.address;
+      const eoaAddress = walletClient.account.address;
+      const saAddress = smartAccountAddress;
 
-      if (!smartAccountAddress || smartAccountAddress === "0x0000000000000000000000000000000000000000") {
-        notification.error("Smart Account address invalid.");
+      if (!eoaAddress) {
+        notification.error("Wallet address invalid.");
         return;
       }
 
-      // Check Smart Account Balance
-      const balance = await publicClient.readContract({
+      // Check Balances
+      const saBalance = saAddress ? await publicClient.readContract({
         address: usdcTokenAddress,
         abi: erc20Abi,
         functionName: "balanceOf",
-        args: [smartAccountAddress],
+        args: [saAddress as `0x${string}`],
+      }) : 0n;
+
+      const eoaBalance = await publicClient.readContract({
+        address: usdcTokenAddress,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [eoaAddress],
       });
 
-      const calls = [];
+      const totalAvailable = saBalance + eoaBalance;
 
-      // If Smart Account needs funds, pull from EOA via Permit
-      if (balance < amountWei) {
-        const missing = amountWei - balance;
-        console.log(`Smart Account needs ${formatUnits(missing, tokenDecimals)} USDC. Initiating Permit...`);
-
-        if (!walletClient || !walletClient.account) {
-          notification.error("Wallet not connected");
-          return;
-        }
-
-        const eoaAddress = walletClient.account.address;
-
-        // 1. Get Nonce
-        const nonce = await publicClient.readContract({
-          address: usdcTokenAddress,
-          abi: usdcAbi,
-          functionName: "nonces",
-          args: [eoaAddress],
-        });
-
-        // 2. Define Permit
-        const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600); // 1 hour
-        const domain = {
-          name: "USDC", // Standard USDC name on Sepolia
-          version: "2", // Standard USDC version on Sepolia
-          chainId: sepolia.id,
-          verifyingContract: usdcTokenAddress,
-        };
-        const types = {
-          Permit: [
-            { name: "owner", type: "address" },
-            { name: "spender", type: "address" },
-            { name: "value", type: "uint256" },
-            { name: "nonce", type: "uint256" },
-            { name: "deadline", type: "uint256" },
-          ],
-        };
-
-        // 3. Sign Permit (No Gas)
-        notification.info("Please sign the Gasless Permit in your wallet...");
-
-        const signature = await walletClient.signTypedData({
-          domain,
-          types,
-          primaryType: "Permit",
-          message: {
-            owner: eoaAddress,
-            spender: smartAccountAddress,
-            value: missing,
-            nonce: nonce,
-            deadline: deadline,
-          },
-        });
-
-        // Split Signature (r, s, v)
-        // viem signature is hex string, needed to split?
-        // Actually permit function takes v, r, s.
-        // We can use viem's parseSignature? No need, manual slice works or viem utils.
-        const { r, s, v } = await import("viem").then(m => m.parseSignature(signature));
-
-        let vNum = Number(v);
-        // Normalize 0/1 to 27/28 if needed by EIP-2612
-        if (vNum === 0 || vNum === 1) {
-          vNum += 27;
-        }
-
-        console.log("Splitting Signature:", { signature, v, vNum, r, s });
-
-        // 4. Batch: Permit Call
-        const permitData = encodeFunctionData({
-          abi: usdcAbi,
-          functionName: "permit",
-          args: [eoaAddress, smartAccountAddress, missing, deadline, vNum, r, s],
-        });
-
-        calls.push({
-          to: usdcTokenAddress,
-          data: permitData,
-          value: 0n,
-        });
-
-        // 5. Batch: TransferFrom Call (Pull funds)
-        const transferFromData = encodeFunctionData({
-          abi: erc20Abi, // standard erc20 has transferFrom
-          functionName: "transferFrom",
-          args: [eoaAddress, smartAccountAddress, missing],
-        });
-
-        calls.push({
-          to: usdcTokenAddress,
-          data: transferFromData,
-          value: 0n,
-        });
+      if (totalAvailable < amountWei) {
+        notification.error(`Insufficient USDC balance. You have ${formatUnits(totalAvailable, tokenDecimals)} USDC total (Wallet: ${formatUnits(eoaBalance, tokenDecimals)}, Smart Account: ${formatUnits(saBalance, tokenDecimals)}) but need ${amount} USDC`);
+        return;
       }
 
-      notification.info("Initializing Session...");
+      notification.info("Creating Session...");
 
-      // 6. Approve Session Contract
-      const approveData = encodeFunctionData({
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [tipFlowSessionData.address, amountWei],
-      });
-      calls.push({
-        to: usdcTokenAddress,
-        data: approveData,
-        value: 0n,
-      });
+      // Choose whether to use Smart Account (gasless) or regular wallet
+      let txHash;
+      if (smartAccountClient && saAddress) {
+        notification.info("Sponsoring transaction with Pimlico...");
 
-      // 7. Create Session
-      const createSessionData = encodeFunctionData({
-        abi: tipFlowSessionData.abi,
-        functionName: "createSession",
-        args: [amountWei],
-      });
-      calls.push({
-        to: tipFlowSessionData.address,
-        data: createSessionData,
-        value: 0n,
-      });
+        const transactions: any[] = [];
 
-      // Execute Batch
-      const txHash = await smartAccountClient.sendTransaction({ calls });
+        // If we need more funds in the Smart Account, pull from EOA via Permit
+        if (saBalance < amountWei) {
+          notification.info("Funds are in your main wallet. Requesting Permit signature...");
 
-      notification.info(`UserOp sent: ${txHash}`);
+          const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600); // 1 hour from now
+          const nonce = await publicClient.readContract({
+            address: usdcTokenAddress as `0x${string}`,
+            abi: usdcAbi,
+            functionName: "nonces",
+            args: [eoaAddress],
+          });
+
+          const domain = {
+            name: "USDC",
+            version: "2",
+            chainId: BigInt(sepolia.id),
+            verifyingContract: usdcTokenAddress as `0x${string}`,
+          };
+
+          const types = {
+            Permit: [
+              { name: "owner", type: "address" },
+              { name: "spender", type: "address" },
+              { name: "value", type: "uint256" },
+              { name: "nonce", type: "uint256" },
+              { name: "deadline", type: "uint256" },
+            ],
+          };
+
+          const signature = await walletClient.signTypedData({
+            account: eoaAddress,
+            domain,
+            types,
+            primaryType: "Permit",
+            message: {
+              owner: eoaAddress,
+              spender: saAddress as `0x${string}`,
+              value: amountWei,
+              nonce,
+              deadline,
+            },
+          });
+
+          const { r, s, v } = await import("viem").then(m => m.parseSignature(signature));
+
+          // 1. Permit
+          transactions.push({
+            to: getAddress(usdcTokenAddress as string),
+            data: encodeFunctionData({
+              abi: usdcAbi,
+              functionName: "permit",
+              args: [getAddress(eoaAddress), getAddress(saAddress as string), amountWei, deadline, Number(v), r, s],
+            }),
+          });
+
+          // 2. TransferFrom EOA to SA
+          transactions.push({
+            to: getAddress(usdcTokenAddress as string),
+            data: encodeFunctionData({
+              abi: erc20Abi,
+              functionName: "transferFrom",
+              args: [getAddress(eoaAddress), getAddress(saAddress as string), amountWei],
+            }),
+          });
+        }
+
+        // 3. Approve Session Contract (from SA)
+        transactions.push({
+          to: getAddress(usdcTokenAddress as string),
+          data: encodeFunctionData({
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [getAddress(tipFlowSessionData.address), amountWei],
+          }),
+        });
+
+        // 4. Create Session (from SA)
+        transactions.push({
+          to: getAddress(tipFlowSessionData.address),
+          data: encodeFunctionData({
+            abi: tipFlowSessionData.abi,
+            functionName: "createSession",
+            args: [amountWei],
+          }),
+        });
+
+        console.log("Sending batches transactions:", transactions);
+
+        // Ensure all 'to' fields are valid addresses
+        transactions.forEach((tx, i) => {
+          if (!tx.to) throw new Error(`Transaction ${i} is missing 'to' address`);
+        });
+
+        txHash = await smartAccountClient.sendTransaction({
+          calls: transactions,
+        });
+
+      } else {
+        // Fallback to regular wallet (EOA)
+        notification.info("Using regular wallet...");
+        const { request: approveRequest } = await publicClient.simulateContract({
+          address: usdcTokenAddress,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [tipFlowSessionData.address, amountWei],
+          account: eoaAddress,
+        });
+
+        const approveHash = await walletClient.writeContract(approveRequest);
+        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+
+        const { request: createSessionRequest } = await publicClient.simulateContract({
+          address: tipFlowSessionData.address,
+          abi: tipFlowSessionData.abi,
+          functionName: "createSession",
+          args: [amountWei],
+          account: eoaAddress,
+        });
+
+        txHash = await walletClient.writeContract(createSessionRequest);
+      }
+
+      notification.info(`Transaction sent: ${txHash}`);
 
       const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
@@ -251,7 +271,7 @@ export const useYellowSession = () => {
             setSessionId(parsedSessionId);
             setTotalDeposited(amountWei.toString());
             setTips({}); // Clear any old tips
-            notification.success("Session Created (Gasless)!");
+            notification.success("Session Created!");
             return;
           }
         }
@@ -317,36 +337,164 @@ export const useYellowSession = () => {
   }, [sessionId, sessionInfo, setSessionId, setTips, setTotalDeposited]);
 
   const endSession = async () => {
-    if (!sessionId) {
+    if (!sessionId || !tipFlowSessionData) {
+      return;
+    }
+
+    if (!walletClient || !walletClient.account) {
+      notification.error("Wallet not connected");
       return;
     }
 
     try {
       const recipients = Object.keys(tips);
+
+      // Validate all addresses before attempting to encode
+      const { isAddress } = await import("viem");
+      const invalidAddresses = recipients.filter(addr => !isAddress(addr));
+
+      if (invalidAddresses.length > 0) {
+        notification.error(`Invalid addresses found in session. Clearing session data. Please start a new session.`);
+        console.error("Invalid addresses:", invalidAddresses);
+        setSessionId(null);
+        setTips({});
+        setTotalDeposited("0");
+        return;
+      }
+
       // Convert stored strings back to bigints for signing/contract call
       const amounts = recipients.map(r => BigInt(tips[r]));
 
+      // Generate the message hash that matches the contract's verification
+      // Contract does: keccak256(abi.encodePacked(_sessionId, _recipients, _amounts))
+      // Then verifies with: messageHash.toEthSignedMessageHash().recover(_signature)
+
+      const { encodePacked } = await import("viem");
+
+      // We need to use encodePacked equivalent in viem
+      // encodePacked concatenates values without padding
+      const messageHash = keccak256(
+        encodePacked(
+          ["bytes32", "address[]", "uint256[]"],
+          [sessionId as `0x${string}`, recipients as `0x${string}`[], amounts]
+        )
+      );
+
+      console.log("Frontend Session ID:", sessionId);
+      console.log("Frontend Message Hash:", messageHash);
+
+      // Sign the message
+      notification.info("Please sign the settlement message...");
+      let signature: `0x${string}`;
+
+      // For Safe's isValidSignature, we need to sign the Safe-specific message hash
+      // Safe computes: keccak256(0x19, 0x01, domainSeparator, keccak256(abi.encode(messageHash)))
+      // Then for eth_sign: wraps with "\x19Ethereum Signed Message:\n32" prefix
+      if (smartAccountClient && smartAccountAddress) {
+        const { encodeAbiParameters, hexToBytes, bytesToHex, parseSignature, concat: viemConcat } = await import("viem");
+
+        // Get Safe's domain separator
+        const SAFE_DOMAIN_SEPARATOR_ABI = [{
+          name: 'domainSeparator',
+          type: 'function',
+          inputs: [],
+          outputs: [{ type: 'bytes32' }],
+          stateMutability: 'view'
+        }] as const;
+
+        const domainSeparator = await publicClient!.readContract({
+          address: smartAccountAddress as `0x${string}`,
+          abi: SAFE_DOMAIN_SEPARATOR_ABI,
+          functionName: 'domainSeparator',
+        });
+
+        console.log("Safe Domain Separator:", domainSeparator);
+
+        // Compute Safe's message hash
+        // SafeMessage type hash: keccak256("SafeMessage(bytes message)")
+        const SAFE_MSG_TYPEHASH = keccak256(toHex("SafeMessage(bytes message)"));
+
+        // The data passed to Safe is abi.encode(messageHash)
+        const encodedMessageHash = encodeAbiParameters(
+          [{ type: 'bytes32' }],
+          [messageHash as `0x${string}`]
+        );
+
+        // Safe's getMessageHash: keccak256(0x19 0x01 domainSeparator keccak256(abi.encode(SAFE_MSG_TYPEHASH, keccak256(message))))
+        const messageDataHash = keccak256(encodedMessageHash);
+        const safeMessageHash = keccak256(
+          encodeAbiParameters(
+            [{ type: 'bytes32' }, { type: 'bytes32' }],
+            [SAFE_MSG_TYPEHASH, messageDataHash]
+          )
+        );
+
+        // Final hash with EIP-712 prefix
+        const finalSafeHash = keccak256(
+          viemConcat([
+            toHex(new Uint8Array([0x19, 0x01])),
+            domainSeparator as `0x${string}`,
+            safeMessageHash
+          ])
+        );
+
+        console.log("Safe Message Hash to sign:", finalSafeHash);
+
+        // Sign using signMessage which adds eth_sign prefix
+        const rawSignature = await walletClient.signMessage({
+          message: { raw: hexToBytes(finalSafeHash) },
+        });
+
+        // Adjust v for Safe's eth_sign format (v + 4)
+        const { r, s, v } = parseSignature(rawSignature);
+        const adjustedV = Number(v) + 4;
+        signature = bytesToHex(
+          new Uint8Array([
+            ...hexToBytes(r as `0x${string}`),
+            ...hexToBytes(s as `0x${string}`),
+            adjustedV
+          ])
+        );
+        console.log("Adjusted signature for Safe:", signature);
+      } else {
+        // For EOA, sign the messageHash directly (with eth prefix)
+        signature = await walletClient.signMessage({
+          message: { raw: toBytes(messageHash) },
+        });
+      }
+
+      // Now call settleSession with the signature
+      let txHash;
+      const checksummedRecipients = recipients.map(r => getAddress(r));
+
       if (smartAccountClient) {
-        // Construct transaction for Smart Account
-        const settleData = encodeFunctionData({
+        notification.info("Sponsoring settlement with Pimlico...");
+        txHash = await smartAccountClient.sendTransaction({
+          calls: [
+            {
+              to: getAddress(tipFlowSessionData.address),
+              data: encodeFunctionData({
+                abi: tipFlowSessionData.abi,
+                functionName: "settleSession",
+                args: [sessionId as `0x${string}`, checksummedRecipients, amounts, signature],
+              }),
+            }
+          ],
+        });
+      } else {
+        const { request: settleRequest } = await publicClient!.simulateContract({
+          address: tipFlowSessionData.address,
           abi: tipFlowSessionData.abi,
           functionName: "settleSession",
-          args: [sessionId as `0x${string}`, recipients, amounts, "0x"], // "0x" is fine now as creator is msg.sender
+          args: [sessionId as `0x${string}`, checksummedRecipients, amounts, signature],
+          account: walletClient.account.address,
         });
 
-        const txHash = await smartAccountClient.sendTransaction({
-          to: tipFlowSessionData.address,
-          data: settleData,
-          value: 0n,
-        });
-
-        notification.info(`Settlement UserOp sent: ${txHash}`);
-        await publicClient?.waitForTransactionReceipt({ hash: txHash });
-      } else {
-        // Fallback or Error
-        notification.error("Smart Account not ready for settlement");
-        return;
+        txHash = await walletClient.writeContract(settleRequest);
       }
+
+      notification.info(`Settlement transaction sent: ${txHash}`);
+      await publicClient?.waitForTransactionReceipt({ hash: txHash });
 
       setTips({});
       setSessionId(null);
@@ -367,6 +515,9 @@ export const useYellowSession = () => {
   };
 
   const withdraw = async () => {
+    if (!tipFlowSessionData) {
+      return;
+    }
     try {
       await withdrawWrite({
         functionName: "withdraw",
