@@ -1,0 +1,84 @@
+﻿   Ôû▓ Next.js 15.2.9
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+
+./components/Header.tsx
+90:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/tipflow/CreatorList.tsx
+188:13  Warning: Insert `┬À┬À`  prettier/prettier
+189:1  Warning: Insert `┬À┬À`  prettier/prettier
+190:1  Warning: Insert `┬À┬À`  prettier/prettier
+191:1  Warning: Insert `┬À┬À`  prettier/prettier
+192:1  Warning: Insert `┬À┬À`  prettier/prettier
+193:15  Warning: Insert `┬À┬À`  prettier/prettier
+194:1  Warning: Insert `┬À┬À`  prettier/prettier
+195:1  Warning: Insert `┬À┬À`  prettier/prettier
+196:19  Warning: Insert `┬À┬À`  prettier/prettier
+197:1  Warning: Insert `┬À┬À`  prettier/prettier
+198:17  Warning: Insert `┬À┬À`  prettier/prettier
+199:1  Warning: Insert `┬À┬À`  prettier/prettier
+200:17  Warning: Insert `┬À┬À`  prettier/prettier
+201:1  Warning: Insert `┬À┬À`  prettier/prettier
+203:1  Warning: Insert `┬À┬À`  prettier/prettier
+204:15  Warning: Insert `┬À┬À`  prettier/prettier
+205:1  Warning: Insert `┬À┬À`  prettier/prettier
+206:1  Warning: Replace `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À` with `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À`  prettier/prettier
+207:19  Warning: Insert `┬À┬À`  prettier/prettier
+208:1  Warning: Replace `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À` with `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À`  prettier/prettier
+209:1  Warning: Insert `┬À┬À`  prettier/prettier
+210:15  Warning: Insert `┬À┬À`  prettier/prettier
+212:1  Warning: Insert `┬À┬À`  prettier/prettier
+213:1  Warning: Insert `┬À┬À`  prettier/prettier
+214:1  Warning: Replace `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À` with `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À`  prettier/prettier
+215:19  Warning: Insert `┬À┬À`  prettier/prettier
+216:1  Warning: Insert `┬À┬À`  prettier/prettier
+217:1  Warning: Insert `┬À┬À`  prettier/prettier
+218:19  Warning: Insert `┬À┬À`  prettier/prettier
+219:1  Warning: Replace `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À` with `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À`  prettier/prettier
+220:1  Warning: Insert `┬À┬À`  prettier/prettier
+221:1  Warning: Insert `┬À┬À`  prettier/prettier
+222:15  Warning: Insert `┬À┬À`  prettier/prettier
+223:1  Warning: Insert `┬À┬À`  prettier/prettier
+224:1  Warning: Replace `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À` with `┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À`  prettier/prettier
+226:1  Warning: Insert `┬À┬À`  prettier/prettier
+227:1  Warning: Insert `┬À┬À`  prettier/prettier
+228:13  Warning: Insert `┬À┬À`  prettier/prettier
+229:1  Warning: Insert `┬À┬À`  prettier/prettier
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+node.exe : Failed to compile.
+At C:\Users\Amir\AppData\Roaming\npm\yarn.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/yarn/bin/yarn.js" 
+$args
++     
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Failed to 
+compile.:Stri    ng) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+./components/tipflow/CreatorList.tsx:89:29
+Type error: Property 'includes' does not exist on type 'never'.
+
+[0m [90m 87 |[39m         }[0m
+[0m [90m 88 |[39m         [90m// If it looks like a domain, 
+try forward resolution[39m[0m
+[0m[31m[1m>[22m[39m[90m 89 |[39m         [36melse[39m 
+[36mif[39m (searchTerm[33m.[39mincludes([32m"."[39m) 
+[33m&&[39m searchTerm[33m.[39mlength [33m>[39m 
+[35m3[39m) {[0m
+[0m [90m    |[39m                             
+[31m[1m^[22m[39m[0m
+[0m [90m 90 |[39m           
+setResolvedName([36mnull[39m)[33m;[39m [90m// Use input as 
+name[39m[0m
+[0m [90m 91 |[39m           [36mconst[39m normalizedName 
+[33m=[39m normalize(searchTerm)[33m;[39m[0m
+[0m [90m 92 |[39m           [36mconst[39m address 
+[33m=[39m [36mawait[39m 
+publicClient[33m.[39mgetEnsAddress({[0m
+Next.js build worker exited with code: 1 and signal: null

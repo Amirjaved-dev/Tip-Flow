@@ -61,7 +61,7 @@ const MOCK_CREATORS: Creator[] = [
 ];
 
 export const CreatorList = ({ onSelectCreator }: CreatorListProps) => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [ensAddress, setEnsAddress] = useState<string | null>(null);
   const [resolvedName, setResolvedName] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(false);
@@ -86,9 +86,9 @@ export const CreatorList = ({ onSelectCreator }: CreatorListProps) => {
           setResolvedName(name);
         }
         // If it looks like a domain, try forward resolution
-        else if (searchTerm.includes(".") && searchTerm.length > 3) {
+        else if ((searchTerm as string).includes(".") && (searchTerm as string).length > 3) {
           setResolvedName(null); // Use input as name
-          const normalizedName = normalize(searchTerm);
+          const normalizedName = normalize(searchTerm as string);
           const address = await publicClient.getEnsAddress({
             name: normalizedName,
           });
