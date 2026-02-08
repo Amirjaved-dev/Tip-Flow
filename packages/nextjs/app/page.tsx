@@ -102,11 +102,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <motion.div
-              className="w-8 h-8 bg-[#14B8A6] rounded-lg flex items-center justify-center"
+              className="w-10 h-10 flex items-center justify-center"
               whileHover={{ scale: 1.1, rotate: 360 }}
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
             >
-              <BoltIcon className="w-5 h-5 text-white" />
+              <img src="/logo.svg" alt="TipFlow Logo" className="w-full h-full object-contain" />
             </motion.div>
             <span className="text-xl font-bold tracking-tight group-hover:text-[#14B8A6] transition-colors">
               TipFlow
@@ -504,8 +504,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             <div>
               <div className="flex items-center gap-2 mb-6">
-                <div className="w-6 h-6 bg-[#14B8A6] rounded-md flex items-center justify-center">
-                  <BoltIcon className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <img src="/logo.svg" alt="TipFlow Logo" className="w-full h-full object-contain" />
                 </div>
                 <span className="font-bold text-lg">TipFlow</span>
               </div>
