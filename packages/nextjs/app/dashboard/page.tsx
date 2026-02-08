@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { motion } from "framer-motion";
 import { erc20Abi, formatUnits } from "viem";
 import { useAccount, useReadContract } from "wagmi";
@@ -120,9 +121,21 @@ export default function CreatorDashboard() {
   if (!address) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4 text-black dark:text-white">Wallet Not Connected</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">Please connect your wallet to view your dashboard.</p>
+        <div className="text-center max-w-sm mx-auto">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-20 h-20 bg-gray-50 dark:bg-gray-900 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-gray-100 dark:border-gray-800"
+          >
+            <BoltIcon className="w-10 h-10 text-[#14B8A6]" />
+          </motion.div>
+          <h2 className="text-3xl font-bold mb-4 text-black dark:text-white">Wallet Not Connected</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+            Please connect your wallet to view your dashboard and manage your earnings.
+          </p>
+          <div className="flex justify-center">
+            <ConnectButton />
+          </div>
         </div>
       </div>
     );
