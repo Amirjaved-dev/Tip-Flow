@@ -122,6 +122,13 @@ export default function LandingPage() {
                 {item}
               </Link>
             ))}
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm text-gray-700 dark:text-gray-300 hover:text-[#14B8A6] dark:hover:text-[#14B8A6] hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+            >
+              <ChartBarIcon className="w-5 h-5" />
+              <span>Creator Dashboard</span>
+            </Link>
             <SwitchTheme className="" />
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
