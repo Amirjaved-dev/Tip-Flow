@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSmartAccount } from "./useSmartAccount";
 import { useSafeLocalStorage as useLocalStorage } from "./useSafeLocalStorage";
+import { useSmartAccount } from "./useSmartAccount";
 import {
   concat,
   encodeAbiParameters,
@@ -117,11 +117,11 @@ export const useYellowSession = () => {
       // Check Balances
       const saBalance = saAddress
         ? await publicClient.readContract({
-          address: usdcTokenAddress,
-          abi: erc20Abi,
-          functionName: "balanceOf",
-          args: [saAddress as `0x${string}`],
-        })
+            address: usdcTokenAddress,
+            abi: erc20Abi,
+            functionName: "balanceOf",
+            args: [saAddress as `0x${string}`],
+          })
         : 0n;
 
       const eoaBalance = await publicClient.readContract({
@@ -141,6 +141,11 @@ export const useYellowSession = () => {
       }
 
       notification.info("Creating Session...");
+
+      console.log("Starting createSession...");
+      console.log("WalletClient:", !!walletClient);
+      console.log("SmartAccountClient:", !!smartAccountClient);
+      console.log("SA Address:", saAddress);
 
       // Choose whether to use Smart Account (gasless) or regular wallet
       let txHash;
