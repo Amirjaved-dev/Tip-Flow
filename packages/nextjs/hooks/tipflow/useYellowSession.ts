@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useSmartAccount } from "./useSmartAccount";
-import { useLocalStorage } from "usehooks-ts";
+import { useSafeLocalStorage as useLocalStorage } from "./useSafeLocalStorage";
 import {
   concat,
   encodeAbiParameters,
@@ -16,7 +16,7 @@ import {
 } from "viem";
 import { encodeFunctionData } from "viem";
 import { sepolia } from "viem/chains";
-import { usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
+import { usePublicClient, useReadContract, useWalletClient } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -117,11 +117,11 @@ export const useYellowSession = () => {
       // Check Balances
       const saBalance = saAddress
         ? await publicClient.readContract({
-            address: usdcTokenAddress,
-            abi: erc20Abi,
-            functionName: "balanceOf",
-            args: [saAddress as `0x${string}`],
-          })
+          address: usdcTokenAddress,
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [saAddress as `0x${string}`],
+        })
         : 0n;
 
       const eoaBalance = await publicClient.readContract({

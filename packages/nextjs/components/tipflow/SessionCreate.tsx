@@ -133,7 +133,8 @@ export const SessionCreate = ({ onStartSession }: SessionCreateProps) => {
                   One-time approval required
                 </h3>
                 <p className="text-sm text-blue-700 dark:text-blue-400 leading-relaxed">
-                  You'll sign one transaction to deposit funds. After that, all tips are completely gasless and instant.
+                  You&apos;ll sign one transaction to deposit funds. After that, all tips are completely gasless and
+                  instant.
                 </p>
               </div>
             </div>

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { InteractiveTipDemo } from "./_components/InteractiveTipDemo";
-import { AnimatePresence, Variants, motion } from "framer-motion";
+import { Variants, motion } from "framer-motion";
 import {
   ArrowRightIcon,
   BoltIcon,
@@ -11,8 +10,6 @@ import {
   CpuChipIcon,
   CurrencyDollarIcon,
   GlobeAltIcon,
-  PlusIcon,
-  RocketLaunchIcon,
   ShieldCheckIcon,
   UserGroupIcon,
   WalletIcon,
@@ -48,17 +45,7 @@ const textReveal: Variants = {
 };
 
 // Components
-const FeatureCard = ({
-  icon: Icon,
-  title,
-  description,
-  delay,
-}: {
-  icon: any;
-  title: string;
-  description: string;
-  delay: number;
-}) => (
+const FeatureCard = ({ icon: Icon, title, description }: { icon: any; title: string; description: string }) => (
   <motion.div
     variants={fadeInUp}
     whileHover={{ y: -8, scale: 1.02 }}
@@ -78,41 +65,6 @@ const FeatureCard = ({
     <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{description}</p>
   </motion.div>
 );
-
-const FaqItem = ({ question, answer }: { question: string; answer: string }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="border-b border-gray-100 dark:border-gray-800">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full py-6 flex items-center justify-between text-left group"
-      >
-        <span className="text-lg font-medium text-gray-900 dark:text-white group-hover:text-black dark:group-hover:text-gray-300 transition-colors">
-          {question}
-        </span>
-        <span
-          className={`p-2 rounded-full border border-gray-200 dark:border-gray-800 transition-transform duration-300 ${isOpen ? "rotate-45" : ""}`}
-        >
-          <PlusIcon className="w-5 h-5 text-gray-500" />
-        </span>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <p className="pb-6 text-gray-600 dark:text-gray-400 leading-relaxed">{answer}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
 
 const AnimatedText = ({ text, className = "" }: { text: string; className?: string }) => {
   const words = text.split(" ");
@@ -312,37 +264,31 @@ export default function LandingPage() {
               icon={ShieldCheckIcon}
               title="Zero Gas Fees"
               description="We use state channels to process transactions off-chain. You only sign once to deposit, then tip endlessly without gas."
-              delay={0}
             />
             <FeatureCard
               icon={BoltIcon}
               title="Instant Settlement"
               description="No block confirmations. No waiting. Tips are verified and secured in milliseconds."
-              delay={0.1}
             />
             <FeatureCard
               icon={CurrencyDollarIcon}
               title="True Micropayments"
               description="Finally, sending $0.05 makes economic sense. Unlock new revenue streams from casual fans."
-              delay={0.2}
             />
             <FeatureCard
               icon={WalletIcon}
               title="Smart Wallet"
               description="Built on Account Abstraction. Enjoy gasless transactions with your favorite wallet."
-              delay={0.3}
             />
             <FeatureCard
               icon={CpuChipIcon}
               title="Open Protocol"
               description="Directly interact with our verifiable smart contracts. Build your own interfaces on top of TipFlow."
-              delay={0.4}
             />
             <FeatureCard
               icon={ChartBarIcon}
               title="Analytics"
               description="Track your top tippers, total revenue, and recent activity in real-time."
-              delay={0.5}
             />
           </motion.div>
         </div>
