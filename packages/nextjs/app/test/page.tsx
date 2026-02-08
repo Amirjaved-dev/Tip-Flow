@@ -45,7 +45,13 @@ export default function TestLandingPage() {
           --lp-gray-500: #737373;
           --lp-accent: #6366f1;
           --lp-accent-light: #818cf8;
-          font-family: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          font-family:
+            "Outfit",
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            sans-serif;
           background: var(--lp-dark-900);
           color: var(--lp-white);
           overflow-x: hidden;
@@ -623,7 +629,10 @@ export default function TestLandingPage() {
           </div>
         </div>
 
-        <h1 className={`lp-hero-title lp-animate ${isVisible["hero"] ? "visible" : ""}`} style={{ animationDelay: "0.1s" }}>
+        <h1
+          className={`lp-hero-title lp-animate ${isVisible["hero"] ? "visible" : ""}`}
+          style={{ animationDelay: "0.1s" }}
+        >
           Streaming Value <br />
           <span className="lp-hero-title-gradient">Gasless. Instant.</span>
         </h1>
@@ -632,11 +641,14 @@ export default function TestLandingPage() {
           className={`lp-hero-subtitle lp-animate ${isVisible["hero"] ? "visible" : ""}`}
           style={{ animationDelay: "0.2s" }}
         >
-          TipFlow enables frictionless micro-tipping for content creators. Lock your budget once, tip unlimited
-          times—no gas fees, no wallet popups, just seamless value transfer.
+          TipFlow enables frictionless micro-tipping for content creators. Lock your budget once, tip unlimited times—no
+          gas fees, no wallet popups, just seamless value transfer.
         </p>
 
-        <div className={`lp-hero-cta lp-animate ${isVisible["hero"] ? "visible" : ""}`} style={{ animationDelay: "0.3s" }}>
+        <div
+          className={`lp-hero-cta lp-animate ${isVisible["hero"] ? "visible" : ""}`}
+          style={{ animationDelay: "0.3s" }}
+        >
           <button className="lp-btn-primary">
             Start a Session
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -740,7 +752,10 @@ export default function TestLandingPage() {
           </h2>
 
           <div className="lp-steps">
-            <div className={`lp-step lp-animate ${isVisible["how"] ? "visible" : ""}`} style={{ animationDelay: "0.1s" }}>
+            <div
+              className={`lp-step lp-animate ${isVisible["how"] ? "visible" : ""}`}
+              style={{ animationDelay: "0.1s" }}
+            >
               <div className="lp-step-number">1</div>
               <h3 className="lp-step-title">Create a Session</h3>
               <p className="lp-step-desc">
@@ -748,7 +763,10 @@ export default function TestLandingPage() {
               </p>
             </div>
 
-            <div className={`lp-step lp-animate ${isVisible["how"] ? "visible" : ""}`} style={{ animationDelay: "0.2s" }}>
+            <div
+              className={`lp-step lp-animate ${isVisible["how"] ? "visible" : ""}`}
+              style={{ animationDelay: "0.2s" }}
+            >
               <div className="lp-step-number">2</div>
               <h3 className="lp-step-title">Tip Freely</h3>
               <p className="lp-step-desc">
@@ -757,7 +775,10 @@ export default function TestLandingPage() {
               </p>
             </div>
 
-            <div className={`lp-step lp-animate ${isVisible["how"] ? "visible" : ""}`} style={{ animationDelay: "0.3s" }}>
+            <div
+              className={`lp-step lp-animate ${isVisible["how"] ? "visible" : ""}`}
+              style={{ animationDelay: "0.3s" }}
+            >
               <div className="lp-step-number">3</div>
               <h3 className="lp-step-title">Settle On-Chain</h3>
               <p className="lp-step-desc">
@@ -774,7 +795,10 @@ export default function TestLandingPage() {
           &ldquo;A payment experience that feels as instant as <span>Web2</span>, but maintains the self-custody and
           transparency of <span>Web3</span>.&rdquo;
         </p>
-        <p className={`lp-vision-text lp-animate ${isVisible["vision"] ? "visible" : ""}`} style={{ animationDelay: "0.1s" }}>
+        <p
+          className={`lp-vision-text lp-animate ${isVisible["vision"] ? "visible" : ""}`}
+          style={{ animationDelay: "0.1s" }}
+        >
           TipFlow solves the fundamental tension in blockchain payments: the need for security and decentralization
           versus the desire for instant, frictionless transactions. Using state channel technology, we deliver both.
         </p>
@@ -782,9 +806,7 @@ export default function TestLandingPage() {
 
       {/* CTA Section */}
       <section className="lp-cta" id="cta" ref={setRef("cta")}>
-        <h2 className={`lp-cta-title lp-animate ${isVisible["cta"] ? "visible" : ""}`}>
-          Ready to stream value?
-        </h2>
+        <h2 className={`lp-cta-title lp-animate ${isVisible["cta"] ? "visible" : ""}`}>Ready to stream value?</h2>
         <p className={`lp-cta-desc lp-animate ${isVisible["cta"] ? "visible" : ""}`}>
           Join creators and supporters who are redefining how micro-payments work on the blockchain.
         </p>

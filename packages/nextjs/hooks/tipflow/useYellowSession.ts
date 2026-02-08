@@ -3,7 +3,17 @@
 import { useEffect } from "react";
 import { useSmartAccount } from "./useSmartAccount";
 import { useLocalStorage } from "usehooks-ts";
-import { erc20Abi, formatUnits, keccak256, parseUnits, toHex, encodeAbiParameters, concat, toBytes, getAddress } from "viem";
+import {
+  concat,
+  encodeAbiParameters,
+  erc20Abi,
+  formatUnits,
+  getAddress,
+  keccak256,
+  parseUnits,
+  toBytes,
+  toHex,
+} from "viem";
 import { encodeFunctionData } from "viem";
 import { sepolia } from "viem/chains";
 import { usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
@@ -105,12 +115,14 @@ export const useYellowSession = () => {
       }
 
       // Check Balances
-      const saBalance = saAddress ? await publicClient.readContract({
-        address: usdcTokenAddress,
-        abi: erc20Abi,
-        functionName: "balanceOf",
-        args: [saAddress as `0x${string}`],
-      }) : 0n;
+      const saBalance = saAddress
+        ? await publicClient.readContract({
+            address: usdcTokenAddress,
+            abi: erc20Abi,
+            functionName: "balanceOf",
+            args: [saAddress as `0x${string}`],
+          })
+        : 0n;
 
       const eoaBalance = await publicClient.readContract({
         address: usdcTokenAddress,
@@ -122,7 +134,9 @@ export const useYellowSession = () => {
       const totalAvailable = saBalance + eoaBalance;
 
       if (totalAvailable < amountWei) {
-        notification.error(`Insufficient USDC balance. You have ${formatUnits(totalAvailable, tokenDecimals)} USDC total (Wallet: ${formatUnits(eoaBalance, tokenDecimals)}, Smart Account: ${formatUnits(saBalance, tokenDecimals)}) but need ${amount} USDC`);
+        notification.error(
+          `Insufficient USDC balance. You have ${formatUnits(totalAvailable, tokenDecimals)} USDC total (Wallet: ${formatUnits(eoaBalance, tokenDecimals)}, Smart Account: ${formatUnits(saBalance, tokenDecimals)}) but need ${amount} USDC`,
+        );
         return;
       }
 
@@ -231,7 +245,6 @@ export const useYellowSession = () => {
         txHash = await smartAccountClient.sendTransaction({
           calls: transactions,
         });
-
       } else {
         // Fallback to regular wallet (EOA)
         notification.info("Using regular wallet...");
@@ -282,7 +295,7 @@ export const useYellowSession = () => {
     }
   };
 
-  const addTip = (recipient: string, amount: string) => {
+  const addTip = (recipient: string, amount: string, recipientName?: string) => {
     if (tokenDecimals === undefined) return;
     const amountWei = parseUnits(amount, tokenDecimals);
 
@@ -305,7 +318,11 @@ export const useYellowSession = () => {
     // Save back as string
     const newAmount = currentRecipientAmount + amountWei;
     setTips({ ...tips, [recipient]: newAmount.toString() });
-    notification.success(`Tipped ${amount} to ${recipient}`);
+
+    // Check if recipientName is "Tip Address" (case-insensitive) to avoid redundancy
+    const displayName = recipientName && recipientName.toLowerCase() !== "tip address" ? recipientName : recipient;
+
+    notification.success(`Tipped ${amount} to ${displayName}`);
   };
 
   // Validate session on-chain to handle chain resets or desyncs
@@ -376,8 +393,8 @@ export const useYellowSession = () => {
       const messageHash = keccak256(
         encodePacked(
           ["bytes32", "address[]", "uint256[]"],
-          [sessionId as `0x${string}`, recipients as `0x${string}`[], amounts]
-        )
+          [sessionId as `0x${string}`, recipients as `0x${string}`[], amounts],
+        ),
       );
 
       console.log("Frontend Session ID:", sessionId);
@@ -391,21 +408,29 @@ export const useYellowSession = () => {
       // Safe computes: keccak256(0x19, 0x01, domainSeparator, keccak256(abi.encode(messageHash)))
       // Then for eth_sign: wraps with "\x19Ethereum Signed Message:\n32" prefix
       if (smartAccountClient && smartAccountAddress) {
-        const { encodeAbiParameters, hexToBytes, bytesToHex, parseSignature, concat: viemConcat } = await import("viem");
+        const {
+          encodeAbiParameters,
+          hexToBytes,
+          bytesToHex,
+          parseSignature,
+          concat: viemConcat,
+        } = await import("viem");
 
         // Get Safe's domain separator
-        const SAFE_DOMAIN_SEPARATOR_ABI = [{
-          name: 'domainSeparator',
-          type: 'function',
-          inputs: [],
-          outputs: [{ type: 'bytes32' }],
-          stateMutability: 'view'
-        }] as const;
+        const SAFE_DOMAIN_SEPARATOR_ABI = [
+          {
+            name: "domainSeparator",
+            type: "function",
+            inputs: [],
+            outputs: [{ type: "bytes32" }],
+            stateMutability: "view",
+          },
+        ] as const;
 
         const domainSeparator = await publicClient!.readContract({
           address: smartAccountAddress as `0x${string}`,
           abi: SAFE_DOMAIN_SEPARATOR_ABI,
-          functionName: 'domainSeparator',
+          functionName: "domainSeparator",
         });
 
         console.log("Safe Domain Separator:", domainSeparator);
@@ -415,27 +440,17 @@ export const useYellowSession = () => {
         const SAFE_MSG_TYPEHASH = keccak256(toHex("SafeMessage(bytes message)"));
 
         // The data passed to Safe is abi.encode(messageHash)
-        const encodedMessageHash = encodeAbiParameters(
-          [{ type: 'bytes32' }],
-          [messageHash as `0x${string}`]
-        );
+        const encodedMessageHash = encodeAbiParameters([{ type: "bytes32" }], [messageHash as `0x${string}`]);
 
         // Safe's getMessageHash: keccak256(0x19 0x01 domainSeparator keccak256(abi.encode(SAFE_MSG_TYPEHASH, keccak256(message))))
         const messageDataHash = keccak256(encodedMessageHash);
         const safeMessageHash = keccak256(
-          encodeAbiParameters(
-            [{ type: 'bytes32' }, { type: 'bytes32' }],
-            [SAFE_MSG_TYPEHASH, messageDataHash]
-          )
+          encodeAbiParameters([{ type: "bytes32" }, { type: "bytes32" }], [SAFE_MSG_TYPEHASH, messageDataHash]),
         );
 
         // Final hash with EIP-712 prefix
         const finalSafeHash = keccak256(
-          viemConcat([
-            toHex(new Uint8Array([0x19, 0x01])),
-            domainSeparator as `0x${string}`,
-            safeMessageHash
-          ])
+          viemConcat([toHex(new Uint8Array([0x19, 0x01])), domainSeparator as `0x${string}`, safeMessageHash]),
         );
 
         console.log("Safe Message Hash to sign:", finalSafeHash);
@@ -449,11 +464,7 @@ export const useYellowSession = () => {
         const { r, s, v } = parseSignature(rawSignature);
         const adjustedV = Number(v) + 4;
         signature = bytesToHex(
-          new Uint8Array([
-            ...hexToBytes(r as `0x${string}`),
-            ...hexToBytes(s as `0x${string}`),
-            adjustedV
-          ])
+          new Uint8Array([...hexToBytes(r as `0x${string}`), ...hexToBytes(s as `0x${string}`), adjustedV]),
         );
         console.log("Adjusted signature for Safe:", signature);
       } else {
@@ -478,7 +489,7 @@ export const useYellowSession = () => {
                 functionName: "settleSession",
                 args: [sessionId as `0x${string}`, checksummedRecipients, amounts, signature],
               }),
-            }
+            },
           ],
         });
       } else {

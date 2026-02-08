@@ -86,7 +86,7 @@ export const Header = () => {
         </details>
         <Link href="/" passHref className="hidden lg:flex items-center gap-2 ml-4 mr-6 shrink-0">
           <div className="flex relative w-10 h-10">
-            <span className="text-3xl">💸</span>
+            <img src="/logo.svg" alt="TipFlow Logo" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="font-bold leading-tight">TipFlow</span>

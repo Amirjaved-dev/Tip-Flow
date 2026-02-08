@@ -25,31 +25,31 @@
 
 @plugin "daisyui/theme" {
   name: "light";
-  --color-primary: #4f46e5;
-  /* Indigo-600 */
+  --color-primary: #0068ff;
+  /* Electric Blue */
   --color-primary-content: #ffffff;
-  --color-secondary: #64748b;
-  /* Slate-500 */
+  --color-secondary: #666666;
+  /* Medium Gray */
   --color-secondary-content: #ffffff;
-  --color-accent: #0ea5e9;
-  /* Sky-500 */
+  --color-accent: #00a896;
+  /* Teal */
   --color-accent-content: #ffffff;
-  --color-neutral: #1e293b;
-  /* Slate-800 */
+  --color-neutral: #1a1a1a;
+  /* Dark Charcoal */
   --color-neutral-content: #ffffff;
 
   --color-base-100: #ffffff;
   --color-base-200: #f8fafc;
   /* Slate-50 */
-  --color-base-300: #e2e8f0;
-  /* Slate-200 */
-  --color-base-content: #0f172a;
-  /* Slate-900 */
+  --color-base-300: #d0d0d0;
+  /* Light Gray */
+  --color-base-content: #1a1a1a;
+  /* Dark Charcoal */
 
-  --color-info: #3b82f6;
+  --color-info: #0068ff;
   --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
+  --color-warning: #ff6b35;
+  --color-error: #e63946;
 
   --radius-field: 0.5rem;
   --radius-box: 0.75rem;
@@ -59,35 +59,35 @@
   name: "dark";
 
   /* Clean Dark Palette - Zinc & Indigo */
-  --color-primary: #6366f1;
-  /* Indigo-500 */
+  --color-primary: #0068ff;
+  /* Electric Blue */
   --color-primary-content: #ffffff;
 
-  --color-secondary: #94a3b8;
-  /* Slate-400 */
-  --color-secondary-content: #0f172a;
+  --color-secondary: #d0d0d0;
+  /* Light Gray */
+  --color-secondary-content: #1a1a1a;
 
-  --color-accent: #38bdf8;
-  /* Sky-400 */
-  --color-accent-content: #0f172a;
+  --color-accent: #00a896;
+  /* Teal */
+  --color-accent-content: #ffffff;
 
-  --color-neutral: #f1f5f9;
-  /* Slate-100 */
-  --color-neutral-content: #0f172a;
+  --color-neutral: #d0d0d0;
+  /* Light Gray */
+  --color-neutral-content: #1a1a1a;
 
-  --color-base-100: #18181b;
-  /* Zinc-900 */
-  --color-base-200: #09090b;
-  /* Zinc-950 */
-  --color-base-300: #27272a;
-  /* Zinc-800 */
-  --color-base-content: #f4f4f5;
-  /* Zinc-100 */
+  --color-base-100: #1a1a1a;
+  /* Dark Charcoal */
+  --color-base-200: #000000;
+  /* Pure Black */
+  --color-base-300: #333333;
+  /* Lighter Charcoal */
+  --color-base-content: #ffffff;
+  /* White */
 
-  --color-info: #60a5fa;
+  --color-info: #0068ff;
   --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-error: #f87171;
+  --color-warning: #ff6b35;
+  --color-error: #e63946;
 
   --radius-field: 0.5rem;
   --radius-box: 0.75rem;
@@ -103,7 +103,6 @@
 }
 
 @layer base {
-
   *,
   ::after,
   ::before,
@@ -175,29 +174,31 @@
 }
 
 /* Stagger Children Utility */
-.stagger-container>*:nth-child(1) {
+.stagger-container > *:nth-child(1) {
   animation-delay: 0.1s;
 }
 
-.stagger-container>*:nth-child(2) {
+.stagger-container > *:nth-child(2) {
   animation-delay: 0.2s;
 }
 
-.stagger-container>*:nth-child(3) {
+.stagger-container > *:nth-child(3) {
   animation-delay: 0.3s;
 }
 
-.stagger-container>*:nth-child(4) {
+.stagger-container > *:nth-child(4) {
   animation-delay: 0.4s;
 }
 
-.stagger-container>*:nth-child(5) {
+.stagger-container > *:nth-child(5) {
   animation-delay: 0.5s;
 }
 
 /* Hover Effects */
 .lift-hover {
-  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  transition:
+    transform 0.3s ease-out,
+    box-shadow 0.3s ease-out;
 }
 
 .lift-hover:hover {

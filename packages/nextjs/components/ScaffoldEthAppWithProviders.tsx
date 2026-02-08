@@ -7,11 +7,8 @@ import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { useTheme } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { WagmiProvider } from "wagmi";
-
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
-
-
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -19,7 +16,18 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
       <div className={`flex flex-col min-h-screen`}>
         <main className="relative flex flex-col flex-1">{children}</main>
       </div>
-      <Toaster />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            zIndex: 9999,
+          },
+        }}
+        containerStyle={{
+          top: 80,
+          zIndex: 9999,
+        }}
+      />
     </>
   );
 };
